@@ -1,5 +1,4 @@
 import pandas as pd
-import numpy as np
 
 tab_heat_demand = pd.read_csv("data/heatingload/room_heating/spezifische Heizlast.csv",sep= ";" )
 
@@ -9,7 +8,7 @@ def heat_demand(df, b_type, b_age, t_design, A):
   m = -q_H_design/(abs(t_design)+t_lim)
   c = q_H_design - abs(t_design) * (q_H_design/(abs(t_design)+t_lim))
   t_amb = df["temp"]
-  q_H = m*t_amb+c
-  df["q_H"]=np.min(q_H_design,np.max(0,q_H))
-  df["Q_H"]=q_H*A
+  df['q_H'] = m*t_amb+c
+  df["q_H"].clip(0,q_H_design,inplace=True) # W/m^2
+  df["Q_H"]=df['q_H']*A*.001 # kW
   return df
