@@ -90,17 +90,22 @@ def update_dashboard(zip_code, start_date, end_date, building_type, building_yea
     df = pd.DataFrame()
     # fetch data
     df = fetch_data(df,start_date,end_date,zip_code)
-    # compute COP
-    df = compute_heat_pump_details(df,model)
+
+    # compute COP and electrical Power
+    df = hf.compute_cop(df,model)
     df = hd.heat_demand(df, b_type=building_type, b_age=building_year,t_design=-15, A=area)
     df = hf.compute_P_electrical(df)
+
+    # compute total quantities
     df["emissions [kg CO2eq]"] = df["P_el"] * df["Intensity [g CO2eq/kWh]"] *1e-3
     total_emission = df["emissions [kg CO2eq]"].sum()
     total_heat = df['Q_H'].sum()
     total_electrical_energy = df['P_el'].sum()
     spf = total_heat/total_electrical_energy
+
+
+    # generate plots/output
     print(total_emission, total_heat, total_electrical_energy, spf)
-    # generate plots
     fig1 = px.line(df,y='temp')
     fig2 = px.line(df,y='emissions [kg CO2eq]')
     fig3 = px.line(df,y='Q_H')
@@ -114,18 +119,6 @@ def fetch_data(df, start_date,end_date,zip_code):
         df = datasource.fetch_all(country_code='DE',zip_code=zip_code,start=start_date_object,end=end_date_object,)
     return df
 
-def compute_heat_pump_details(df,model):
-    df.loc[:,'COP'] = np.nan
-    if model == 'Carnot':
-        # TODO: feed DataFrame with Q_required and t_amb to compute Carnot efficiency
-        df = hf.cop_carnot(df)
-        # TODO compute required power
-        #  df = hf.compute_P_electrical(df)
-    elif model == 'soph':
-        df.loc[:,'COP'] = 1
-    return df
-
-
 # Run the app
 if __name__ == '__main__':
-    app.run_server(debug=True)
+    app.run_server(debug=False)
