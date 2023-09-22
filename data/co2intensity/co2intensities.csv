@@ -1,14 +1,14 @@
 Emissions [g CO2eq/kWh];Min;Med;Max
-Hard coal [MWh] Calculated resolutions; 740; 820; 910
-Fossil gas [MWh] Calculated resolutions; 410; 490; 650
-Biomass [MWh] Calculated resolutions; 130; 230; 420
-Photovoltaics [MWh] Calculated resolutions;8.8; 27; 63
-Hydropower [MWh] Calculated resolutions; 1; 24; 2200
-Wind offshore [MWh] Calculated resolutions; 8; 12; 35
-Nuclear [MWh] Calculated resolutions;3.7; 12; 110
-Wind onshore [MWh] Calculated resolutions; 7; 11; 56
+Hard coal [MWh] Calculated resolutions; 740; 1152.4; 910
+Fossil gas [MWh] Calculated resolutions; 410; 660.6; 650
+Biomass [MWh] Calculated resolutions; 130; 439.1; 420
+Photovoltaics [MWh] Calculated resolutions;8.8; 35.1; 63
+Hydropower [MWh] Calculated resolutions; 1; 10.7; 2200
+Wind offshore [MWh] Calculated resolutions; 8; 12.6; 35
+Nuclear [MWh] Calculated resolutions;3.7; 5.13; 110
+Wind onshore [MWh] Calculated resolutions; 7; 12.6; 56
 
-Hydro pumped storage [MWh] Calculated resolutions; 500;500;500
-Lignite [MWh] Calculated resolutions;398.7;898.7;398.7
-Other conventional [MWh] Calculated resolutions;250;250;250
+Hydro pumped storage [MWh] Calculated resolutions; 500;297.2;500
+Lignite [MWh] Calculated resolutions;398.7;1152.4;398.7
+Other conventional [MWh] Calculated resolutions;700;700;700
 Other renewable [MWh] Calculated resolutions;50;50;50
