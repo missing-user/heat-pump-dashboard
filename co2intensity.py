@@ -1,7 +1,6 @@
 import pandas as pd
-import requests
 
-def load_generation_history(filename="data/co2intensity/Actual_generation_201801010000_202301012359_Hour.csv"):
+def load_generation_history(filename):
   power_df = pd.read_csv(filename, sep=";", thousands=",", decimal=".")
   hour_deltas = pd.to_datetime(power_df["Start"]).dt.hour.apply(lambda x: pd.Timedelta(hours=x))
   power_df["Date"] = pd.to_datetime(power_df["Date"]) + hour_deltas
@@ -21,11 +20,12 @@ def add_intensity_column(power_df, intensity_df):
   power_df["CO2 sum"] = sum([power_df[col] for col in power_df.columns if "[g CO2eq/kWh]" in col])
   power_df["kWh sum"] = sum([power_df[col] for col in power_df.columns if "[MWh] Calculated resolutions" in col])
   power_df["Intensity"]=power_df["CO2 sum"] / power_df["kWh sum"]
-  return power_df
+  return power_df.set_index("Date")
 
-def load_all():
-  intensity_df = pd.read_csv("data/co2intensity/co2intensities.csv", sep=";")
-  power_df = load_generation_history()
+def load_all(generation_path="data/co2intensity/Actual_generation_201801010000_202301012359_Hour.csv",
+             intensity_path="data/co2intensity/co2intensities.csv"):
+  intensity_df = pd.read_csv(intensity_path, sep=";")
+  power_df = load_generation_history(generation_path)
   return add_intensity_column(power_df, intensity_df)
 
 if __name__ == "__main__":

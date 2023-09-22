@@ -11,6 +11,9 @@ We want to build a dashboard to visualize the CO2 emissions of heat pumps
 - Scenario analysis of heat pump performance with future weather + energy mix predictions (up to 2050)
 - Comparisons to other heating technologies (primary energy demand, CO2 emissions, costs)
 
+- Would a higher percentage in solar electricity mix have changed CO2 emissions significantly?
+- Does the temporal dependence make a difference
+
 ## How we want to do it
 
 - Model the demand of different house types (domestic hot water usage, space heating) for different sizes, habitants, preferences (e.g. Warmduscher)
@@ -33,3 +36,9 @@ We want to build a dashboard to visualize the CO2 emissions of heat pumps
   4. Different Variants for global insight and single household
   5. 
 - Integration with Solar team for PV production
+
+## Documentation of sources
+Carbon intensity factors:
+Hydro pump storage: according to http://dse.univr.it/home/workingpapers/wp2021n8.pdf effective footprint is 31% above grid average due to round trip losses
+
+

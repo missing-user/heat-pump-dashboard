@@ -4,3 +4,4 @@ Reihenendhaus;160;150;130;110;90;70;55;;;;
 Reihenmittelhaus;140;130;120;100;85;65;50;;;;
 Mehrfamilienhaus < 8 WE;130;120;110;75;65;60;45;41;42;33;25
 Mehrfamilienhaus > 8 WE;120;110;100;70;60;55;40;;;;
+Heizgrenztemperatur;17;17;17;16;16;15;14;13;12;11;9
