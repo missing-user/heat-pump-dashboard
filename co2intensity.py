@@ -34,6 +34,5 @@ if __name__ == "__main__":
   power_df = load_all()
   # power_df["Intensity"] is the column of interest
 
-  px.line(power_df, x="Date",y="Intensity").show()
-  px.area(power_df, x="Date", 
-    y=[col for col in power_df.columns if "[g CO2eq/kWh]" in col]).show()
+  px.line(power_df, y="Intensity").show()
+  px.area(power_df, y=[col for col in power_df.columns if "[g CO2eq/kWh]" in col]).show()
