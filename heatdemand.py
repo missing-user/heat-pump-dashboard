@@ -13,4 +13,3 @@ def heat_demand(df, b_type, b_age, t_design, A):
   df["q_H"]=np.min(q_H_design,np.max(0,q_H))
   df["Q_H"]=q_H*A
   return df
-print(heat_demand(0,"single_family_house", "1969-73",0))
