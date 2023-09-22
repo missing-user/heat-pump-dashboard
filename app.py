@@ -62,15 +62,24 @@ app.layout = html.Div([
         html.Div(id='selected-heat-pump-model'),
         dcc.Store(id='data'),
         html.Button(id='compute', n_clicks=0, children='compute'),
+
+        html.Br(),
+        dcc.Dropdown(id='plot1-quantity', multi=False, placeholder="(mandatory) Select (multiple) y-Value(s)"),
+        dcc.Dropdown(id='plot2-quantity', multi=False, placeholder="(mandatory) Select (multiple) y-Value(s)"),
+        dcc.Dropdown(id='plot3-quantity', multi=False, placeholder="(mandatory) Select (multiple) y-Value(s)"),
+        dcc.Dropdown(id='plot4-quantity', multi=False, placeholder="(mandatory) Select (multiple) y-Value(s)"),
+        html.Div([html.Label("Plot 1 Style: "), dcc.RadioItems(["line", "bar"], "line", id="plot1-style", style={"display" : "inline-block"})]),
+        html.Div([html.Label("Plot 2 Style: "), dcc.RadioItems(["line", "bar"], "line", id="plot2-style", style={"display" : "inline-block"})]),
+        html.Div([html.Label("Plot 3 Style: "), dcc.RadioItems(["line", "bar"], "line", id="plot3-style", style={"display" : "inline-block"})]),
+        html.Div([html.Label("Plot 4 Style: "), dcc.RadioItems(["line", "bar"], "line", id="plot4-style", style={"display" : "inline-block"})]),
         ], style={'width': '300px'}),
 
     html.Div(children=[
-        html.Div(
-            html.Div(
-                dcc.Dropdown(id='plot1-quantity', multi=True, placeholder="(mandatory) Select (multiple) y-Value(s)"),
-            )
-        ),
+        html.Div(children=[
+            html.Div(children=[
 
+            ], style={'display':'inline-block', 'width':'40%'}),
+        ]),
         dcc.Loading(dcc.Graph(id='plot1')),
         html.H2('Total emissions:'),
         html.Div(id='total-emissions'),
@@ -81,6 +90,9 @@ app.layout = html.Div([
     Output('plot1','figure'),
     Output('total-emissions','children'),
     Output('plot1-quantity','options'),
+    Output('plot2-quantity','options'),
+    Output('plot3-quantity','options'),
+    Output('plot4-quantity','options'),
 
     Input('zip-input', 'value'),
     Input('weather-date-picker-range', 'start_date'),
@@ -90,12 +102,25 @@ app.layout = html.Div([
     Input('area', 'value'),
     Input('heatpump-model','value'),
     Input('plot1-quantity','value'),
+    Input('plot2-quantity','value'),
+    Input('plot3-quantity','value'),
+    Input('plot4-quantity','value'),
+    Input('plot1-style','value'),
+    Input('plot2-style','value'),
+    Input('plot3-style','value'),
+    Input('plot4-style','value'),
     )
-def update_dashboard(zip_code, start_date, end_date, building_type, building_year, area, model, y1, ):
+def update_dashboard(zip_code, start_date, end_date, building_type, building_year, area, model, y1, y2, y3, y4, s1, s2, s3, s4):
     ctx = dash.callback_context
 
     if not y1:
-        y1 = ['temp']
+        y1 = 'temp'
+    if not y2:
+        y2 = 'emissions [kg CO2eq]'
+    if not y3:
+        y3 = 'Q_H'
+    if not y4:
+        y4 = 'P_el'
 
     df = pd.DataFrame()
     # fetch data
@@ -115,21 +140,32 @@ def update_dashboard(zip_code, start_date, end_date, building_type, building_yea
 
     # generate plots
     fig = make_subplots(rows=2, cols=2, shared_xaxes=True).update_layout(height=900)
-    for y in y1:
-        fig.add_trace(px.line(df,y=y).data[0], row=1, col=1)
-    fig.add_trace(px.line(df,y='emissions [kg CO2eq]').data[0], row=1, col=2)
-    fig.add_trace(px.histogram(df,x=df.index, y='Q_H').update_traces(xbins_size="M1").data[0], row=2, col=1)
-    fig.add_trace(px.line(df,y='P_el').data[0], row=2, col=2)
+    if s1 == 'line':
+        fig.add_trace(px.line(df,y=y1).data[0], row=1, col=1)
+    elif s1 == 'bar':
+        fig.add_trace(px.histogram(df, x=df.index, y=y1).update_traces(xbins_size="M1").data[0], row=1, col=1)
+
+    if s2 == 'line':
+        fig.add_trace(px.line(df,y=y2).data[0], row=1, col=2)
+    elif s2 == 'bar':
+        fig.add_trace(px.histogram(df, x=df.index, y=y2).update_traces(xbins_size="M1").data[0], row=1, col=2)
+
+    if s3 == 'line':
+        fig.add_trace(px.line(df,y=y1).data[0], row=2, col=1)
+    elif s3 == 'bar':
+        fig.add_trace(px.histogram(df, x=df.index, y=y3).update_traces(xbins_size="M1").data[0], row=2, col=1)
+
+    if s4 == 'line':
+        fig.add_trace(px.line(df,y=y4).data[0], row=2, col=2)
+    elif s4 == 'bar':
+        fig.add_trace(px.histogram(df, x=df.index, y=y4).update_traces(xbins_size="M1").data[0], row=2, col=2)
+
     
     # Add y axis labels
-    #fig.update_yaxes(title_text=y1, row=1, col=1)
-    fig.update_yaxes(title_text="Emissions [kg CO2eq]", row=1, col=2)
-    fig.update_yaxes(title_text="Heat demand [kWh]", row=2, col=1)
-    fig.update_yaxes(title_text="Power [kW]", row=2, col=2)
-
-    # Add a histogram and a line plot on the same subplot
-    fig.add_trace(px.histogram(df,x=df.index, y='Q_H').update_traces(xbins_size="M1").data[0], row=2, col=1)
-    fig.add_trace(px.line(df,y='P_el').data[0], row=2, col=2)
+    fig.update_yaxes(title_text=y1, row=1, col=1)
+    fig.update_yaxes(title_text=y2, row=1, col=2)
+    fig.update_yaxes(title_text=y3, row=2, col=1)
+    fig.update_yaxes(title_text=y4, row=2, col=2)
 
     # display total quantities
     fig2 = html.Div(children=[
@@ -138,7 +174,7 @@ def update_dashboard(zip_code, start_date, end_date, building_type, building_yea
         html.Div(f"Total electrical energy: {total_electrical_energy:.1f} kWh"),
         html.Div(f"SPF:                     {spf:.1f}"),
     ])
-    return fig, fig2, df.columns.values
+    return fig, fig2, df.columns.values, df.columns.values, df.columns.values, df.columns.values
 
 def fetch_data(df, start_date,end_date,zip_code):
     if start_date and end_date and zip_code:
