@@ -1,6 +1,9 @@
 import dash
 from dash import Dash, dcc, html, Input, Output, callback
 import plotly.express as px
+import plotly.graph_objects as go
+import plotly.io as pio
+from plotly.subplots import make_subplots
 import pandas as pd
 import heatpump as hf
 import heatdemand as hd
@@ -8,6 +11,8 @@ import heatdemand as hd
 import datasource
 from datetime import datetime, date
 import numpy as np
+
+pio.templates.default = "plotly_white"
 
 # Initialize the Dash app
 app = dash.Dash(__name__)
@@ -17,7 +22,7 @@ app.layout = html.Div([
     html.Div(children=[
         html.Label('Enter location for weather data:'),
         html.Label("Zip Code"),
-        dcc.Input(id="zip-input", type="number", placeholder="Enter a Zip Code", debounce=True),
+        dcc.Input(id="zip-input", type="number", value=80333, placeholder="Enter a Zip Code", debounce=True),
         html.Label('Pick date range for simulation'),
         dcc.DatePickerRange(
             id='weather-date-picker-range',
@@ -42,7 +47,7 @@ app.layout = html.Div([
             value=hd.tab_heat_demand.columns[3],
         ),
 
-        dcc.Input(id='area',min=1,value=100,type='number', placeholder="Enter area", debounce=True),
+        dcc.Input(id='area',min=1,value=120,type='number', placeholder="Enter area", debounce=True),
 
         html.Label('Select model for heat pump'),
 
@@ -52,29 +57,26 @@ app.layout = html.Div([
                 {'label': 'Carnot', 'value': 'Carnot'},
                 {'label': 'sophisticated', 'value': 'soph'},
             ],
+            value='Carnot'
         ),
         html.Div(id='selected-heat-pump-model'),
         dcc.Store(id='data'),
-        html.Button(id='plot-button', n_clicks=0, children='plot'),
-    ], style={'width': '300px', 'float': 'left'}),
+        ], style={'width': '300px'}),
 
     html.Div(children=[
-    html.Div([
-        dcc.Graph(id='plot1'),
-        dcc.Graph(id='plot2'),
-    ], style={'display': 'inline-block'}),
-    html.Div([
-        dcc.Graph(id='plot3'),
-        dcc.Graph(id='plot4'),
-    ], style={'display': 'inline-block'})
-    ]),
-], style = {'font-family':'sans-serif'})
+        dcc.Loading(dcc.Graph(id='plot1')),
+        html.H2('Total emissions:'),
+        html.Div(id='total-emissions'),
+     ], style={'width': '100%'})
+    #]),
+], style = {'display':'flex'})
 
 @callback(
     Output('plot1','figure'),
-    Output('plot2','figure'),
-    Output('plot3', 'figure'),
-    Output('plot4','figure'),
+    #Output('plot2','figure'),
+    Output('total-emissions','children'),
+    # Output('plot3', 'figure'),
+    # Output('plot4','figure'),
 
     Input('zip-input', 'value'),
     Input('weather-date-picker-range', 'start_date'),
@@ -83,10 +85,9 @@ app.layout = html.Div([
     Input('building-year-dropdown','value'),
     Input('area', 'value'),
     Input('heatpump-model','value'),
-    Input('plot-button', 'n_clicks'),
-    config_prevent_initial_callbacks=True,
+    #config_prevent_initial_callbacks=True,
     )
-def update_dashboard(zip_code, start_date, end_date, building_type, building_year, area, model, n_clicks):
+def update_dashboard(zip_code, start_date, end_date, building_type, building_year, area, model):
     df = pd.DataFrame()
     # fetch data
     df = fetch_data(df,start_date,end_date,zip_code)
@@ -99,13 +100,33 @@ def update_dashboard(zip_code, start_date, end_date, building_type, building_yea
     total_heat = df['Q_H'].sum()
     total_electrical_energy = df['P_el'].sum()
     spf = total_heat/total_electrical_energy
-    print(total_emission, total_heat, total_electrical_energy, spf)
     # generate plots
-    fig1 = px.line(df,y='temp')
-    fig2 = px.line(df,y='emissions [kg CO2eq]')
-    fig3 = px.line(df,y='Q_H')
-    fig4 = px.line(df,y='P_el')
-    return [fig1,fig2,fig3,fig4]
+
+    fig = make_subplots(rows=2, cols=2, shared_xaxes=True).update_layout(height=900)
+    fig.add_trace(px.line(df,y='temp').data[0], row=1, col=1)
+    fig.add_trace(px.line(df,y='emissions [kg CO2eq]').data[0], row=1, col=2)
+    fig.add_trace(px.histogram(df,x=df.index, y='Q_H').update_traces(xbins_size="M1").data[0], row=2, col=1)
+    fig.add_trace(px.line(df,y='P_el').data[0], row=2, col=2)
+    
+    # Add y axis labels
+    fig.update_yaxes(title_text="Temperature [°C]", row=1, col=1)
+    fig.update_yaxes(title_text="Emissions [kg CO2eq]", row=1, col=2)
+    fig.update_yaxes(title_text="Heat demand [kWh]", row=2, col=1)
+    fig.update_yaxes(title_text="Power [kW]", row=2, col=2)
+
+    # Add a histogram and a line plot on the same subplot
+    fig.add_trace(px.histogram(df,x=df.index, y='Q_H').update_traces(xbins_size="M1").data[0], row=2, col=1)
+    fig.add_trace(px.line(df,y='P_el').data[0], row=2, col=2)
+
+
+    # fig1 = px.line(df,y='temp')
+    fig2 = html.Div(children=[
+        html.Div(f"Total emissions:         {total_emission:.1f} kg CO2eq"),
+        html.Div(f"Total heat demand:       {total_heat:.1f} kWh"),
+        html.Div(f"Total electrical energy: {total_electrical_energy:.1f} kWh"),
+        html.Div(f"SPF:                     {spf:.1f}"),
+    ])
+    return fig, fig2
 
 def fetch_data(df, start_date,end_date,zip_code):
     if start_date and end_date and zip_code:
