@@ -61,22 +61,26 @@ app.layout = html.Div([
         ),
         html.Div(id='selected-heat-pump-model'),
         dcc.Store(id='data'),
+        html.Button(id='compute', n_clicks=0, children='compute'),
         ], style={'width': '300px'}),
 
     html.Div(children=[
+        html.Div(
+            html.Div(
+                dcc.Dropdown(id='plot1-quantity', multi=True, placeholder="(mandatory) Select (multiple) y-Value(s)"),
+            )
+        ),
+
         dcc.Loading(dcc.Graph(id='plot1')),
         html.H2('Total emissions:'),
         html.Div(id='total-emissions'),
      ], style={'width': '100%'})
-    #]),
 ], style = {'display':'flex'})
 
 @callback(
     Output('plot1','figure'),
-    #Output('plot2','figure'),
     Output('total-emissions','children'),
-    # Output('plot3', 'figure'),
-    # Output('plot4','figure'),
+    Output('plot1-quantity','options'),
 
     Input('zip-input', 'value'),
     Input('weather-date-picker-range', 'start_date'),
@@ -85,9 +89,14 @@ app.layout = html.Div([
     Input('building-year-dropdown','value'),
     Input('area', 'value'),
     Input('heatpump-model','value'),
-    #config_prevent_initial_callbacks=True,
+    Input('plot1-quantity','value'),
     )
-def update_dashboard(zip_code, start_date, end_date, building_type, building_year, area, model):
+def update_dashboard(zip_code, start_date, end_date, building_type, building_year, area, model, y1, ):
+    ctx = dash.callback_context
+
+    if not y1:
+        y1 = ['temp']
+
     df = pd.DataFrame()
     # fetch data
     df = fetch_data(df,start_date,end_date,zip_code)
@@ -98,21 +107,22 @@ def update_dashboard(zip_code, start_date, end_date, building_type, building_yea
     df = hf.compute_P_electrical(df)
 
     # compute total quantities
-    df["emissions [kg CO2eq]"] = df["P_el"] * df["Intensity [g CO2eq/kWh]"] *1e-3
+    df["emissions [kg CO2eq]"] = df["P_el"] * df["Intensity [g CO2eq/kWh]"] * 1e-3
     total_emission = df["emissions [kg CO2eq]"].sum()
     total_heat = df['Q_H'].sum()
     total_electrical_energy = df['P_el'].sum()
     spf = total_heat/total_electrical_energy
-    # generate plots
 
+    # generate plots
     fig = make_subplots(rows=2, cols=2, shared_xaxes=True).update_layout(height=900)
-    fig.add_trace(px.line(df,y='temp').data[0], row=1, col=1)
+    for y in y1:
+        fig.add_trace(px.line(df,y=y).data[0], row=1, col=1)
     fig.add_trace(px.line(df,y='emissions [kg CO2eq]').data[0], row=1, col=2)
     fig.add_trace(px.histogram(df,x=df.index, y='Q_H').update_traces(xbins_size="M1").data[0], row=2, col=1)
     fig.add_trace(px.line(df,y='P_el').data[0], row=2, col=2)
     
     # Add y axis labels
-    fig.update_yaxes(title_text="Temperature [°C]", row=1, col=1)
+    #fig.update_yaxes(title_text=y1, row=1, col=1)
     fig.update_yaxes(title_text="Emissions [kg CO2eq]", row=1, col=2)
     fig.update_yaxes(title_text="Heat demand [kWh]", row=2, col=1)
     fig.update_yaxes(title_text="Power [kW]", row=2, col=2)
@@ -121,23 +131,22 @@ def update_dashboard(zip_code, start_date, end_date, building_type, building_yea
     fig.add_trace(px.histogram(df,x=df.index, y='Q_H').update_traces(xbins_size="M1").data[0], row=2, col=1)
     fig.add_trace(px.line(df,y='P_el').data[0], row=2, col=2)
 
-
-    # fig1 = px.line(df,y='temp')
+    # display total quantities
     fig2 = html.Div(children=[
         html.Div(f"Total emissions:         {total_emission:.1f} kg CO2eq"),
         html.Div(f"Total heat demand:       {total_heat:.1f} kWh"),
         html.Div(f"Total electrical energy: {total_electrical_energy:.1f} kWh"),
         html.Div(f"SPF:                     {spf:.1f}"),
     ])
-    return fig, fig2
+    return fig, fig2, df.columns.values
 
 def fetch_data(df, start_date,end_date,zip_code):
     if start_date and end_date and zip_code:
         start_date_object = datetime.fromisoformat(start_date)
         end_date_object = datetime.fromisoformat(end_date)
-        df = datasource.fetch_all(country_code='DE',zip_code=zip_code,start=start_date_object,end=end_date_object,)
+        df = datasource.fetch_all(country_code='DE', zip_code=zip_code, start=start_date_object, end=end_date_object,)
     return df
 
 # Run the app
 if __name__ == '__main__':
-    app.run_server(debug=False)
+    app.run_server(debug=True)
