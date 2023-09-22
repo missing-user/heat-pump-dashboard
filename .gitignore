@@ -3,3 +3,4 @@ venv
 .idea/
 .env
 .env.leave
+cache/
