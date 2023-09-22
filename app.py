@@ -88,9 +88,8 @@ app.layout = html.Div([
     #config_prevent_initial_callbacks=True,
     )
 def update_dashboard(zip_code, start_date, end_date, building_type, building_year, area, model):
-    df = pd.DataFrame()
     # fetch data
-    df = fetch_data(df,start_date,end_date,zip_code)
+    df = fetch_data(start_date,end_date,zip_code)
 
     # compute COP and electrical Power
     df = hf.compute_cop(df,model)
@@ -121,7 +120,6 @@ def update_dashboard(zip_code, start_date, end_date, building_type, building_yea
     fig.add_trace(px.histogram(df,x=df.index, y='Q_H').update_traces(xbins_size="M1").data[0], row=2, col=1)
     fig.add_trace(px.line(df,y='P_el').data[0], row=2, col=2)
 
-
     # fig1 = px.line(df,y='temp')
     fig2 = html.Div(children=[
         html.Div(f"Total emissions:         {total_emission:.1f} kg CO2eq"),
@@ -131,7 +129,7 @@ def update_dashboard(zip_code, start_date, end_date, building_type, building_yea
     ])
     return fig, fig2
 
-def fetch_data(df, start_date,end_date,zip_code):
+def fetch_data(start_date,end_date,zip_code):
     if start_date and end_date and zip_code:
         start_date_object = datetime.fromisoformat(start_date)
         end_date_object = datetime.fromisoformat(end_date)
