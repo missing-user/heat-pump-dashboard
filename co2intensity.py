@@ -13,11 +13,13 @@ def add_intensity_column(power_df, intensity_df):
   for energy_type in power_df.columns:
     if (intensity_df["Emissions [g CO2eq/kWh]"] == energy_type).any():  
       intensity_name = energy_type.replace("[MWh] Calculated resolutions", "[g CO2eq/kWh]")
-      power_df[intensity_name] = power_df[energy_type] * intensity_lookup.loc[energy_type, "Med"]
+      power_df[intensity_name] = power_df[energy_type]*1e3 * intensity_lookup.loc[energy_type, "Med"]
+    else:
+      print(energy_type)
 
   power_df["CO2 sum"] = sum([power_df[col] for col in power_df.columns if "[g CO2eq/kWh]" in col])
-  power_df["kWh sum"] = sum([1e3*power_df[col] for col in power_df.columns if "[MWh] Calculated resolutions" in col])
-  power_df["Intensity"]=power_df["CO2 sum"] / power_df["kWh sum"]
+  power_df["kWh sum"] = sum([power_df[col]*1e3 for col in power_df.columns if "[MWh] Calculated resolutions" in col])
+  power_df["Intensity [g CO2eq/kWh]"]=power_df["CO2 sum"] / power_df["kWh sum"]
   return power_df.set_index("Date")
 
 def load_all(generation_path="data/co2intensity/Actual_generation_201801010000_202301012359_Hour.csv",
