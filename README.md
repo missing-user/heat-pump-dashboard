@@ -40,5 +40,9 @@ We want to build a dashboard to visualize the CO2 emissions of heat pumps
 ## Documentation of sources
 Carbon intensity factors:
 Hydro pump storage: according to http://dse.univr.it/home/workingpapers/wp2021n8.pdf effective footprint is 31% above grid average due to round trip losses
+specific heat demand:   http://www.bosy-online.de/heizlastberechnung_nach_din_en_12831.htm
+                        https://www.waermepumpe.de/normen-technik/heizlastrechner/
+                        https://www.npro.energy/main/de/load-profiles/heat-load-and-demand
+Heating limit temperature: https://www.effizienzhaus-online.de/lexikon/heizgrenztemperatur/
 
 
