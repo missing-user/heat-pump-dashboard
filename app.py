@@ -6,6 +6,7 @@ import plotly.io as pio
 from plotly.subplots import make_subplots
 import pandas as pd
 import heatpump as hf
+import electricity as el
 import heatdemand as hd
 
 import datasource
@@ -46,6 +47,9 @@ app.layout = html.Div([
             options=hd.tab_heat_demand.columns[1:],
             value=hd.tab_heat_demand.columns[3],
         ),
+        dcc.Dropdown(id="family-type-dropdown",
+                     options=[{"label":l,"value": v}for l,v in zip(el.list_readable_electricity_profiles(), el.list_electricity_profiles())],
+                     value=el.list_electricity_profiles()[0]),
 
         dcc.Input(id='area',min=1,value=120,type='number', placeholder="Enter area", debounce=True),
 
@@ -62,10 +66,10 @@ app.layout = html.Div([
         html.Div(id='selected-heat-pump-model'),
         dcc.Store(id='data'),
         html.Br(),
-        dcc.Dropdown(id='plot1-quantity', multi=False, placeholder="(mandatory) Select (multiple) y-Value(s)"),
-        dcc.Dropdown(id='plot2-quantity', multi=False, placeholder="(mandatory) Select (multiple) y-Value(s)"),
-        dcc.Dropdown(id='plot3-quantity', multi=False, placeholder="(mandatory) Select (multiple) y-Value(s)"),
-        dcc.Dropdown(id='plot4-quantity', multi=False, placeholder="(mandatory) Select (multiple) y-Value(s)"),
+        dcc.Dropdown(id='plot1-quantity', multi=False, value="temp", placeholder="(mandatory) Select (multiple) y-Value(s)"),
+        dcc.Dropdown(id='plot2-quantity', multi=False, value="temp", placeholder="(mandatory) Select (multiple) y-Value(s)"),
+        dcc.Dropdown(id='plot3-quantity', multi=False, value="temp", placeholder="(mandatory) Select (multiple) y-Value(s)"),
+        dcc.Dropdown(id='plot4-quantity', multi=False, value="T_house", placeholder="(mandatory) Select (multiple) y-Value(s)"),
         html.Div([html.Label("Plot 1 Style: "), dcc.RadioItems(["line", "bar"], "line", id="plot1-style", style={"display" : "inline-block"})]),
         html.Div([html.Label("Plot 2 Style: "), dcc.RadioItems(["line", "bar"], "line", id="plot2-style", style={"display" : "inline-block"})]),
         html.Div([html.Label("Plot 3 Style: "), dcc.RadioItems(["line", "bar"], "line", id="plot3-style", style={"display" : "inline-block"})]),
@@ -97,6 +101,7 @@ app.layout = html.Div([
     Input('weather-date-picker-range', 'end_date'),
     Input('building-dropdown','value'),
     Input('building-year-dropdown','value'),
+    Input("family-type-dropdown", "value"),
     Input('area', 'value'),
     Input('heatpump-model','value'),
     Input('plot1-quantity','value'),
@@ -108,24 +113,16 @@ app.layout = html.Div([
     Input('plot3-style','value'),
     Input('plot4-style','value'),
     )
-def update_dashboard(zip_code, start_date, end_date, building_type, building_year, area, model, y1, y2, y3, y4, s1, s2, s3, s4):
+def update_dashboard(zip_code, start_date, end_date, building_type, building_year, family_type, area, model, y1, y2, y3, y4, s1, s2, s3, s4):
     ctx = dash.callback_context
-
-    if not y1:
-        y1 = 'temp'
-    if not y2:
-        y2 = 'emissions [kg CO2eq]'
-    if not y3:
-        y3 = 'Q_dot_H'
-    if not y4:
-        y4 = 'P_el'
 
     # fetch data
     df = fetch_data(start_date,end_date,zip_code)
-
+    df = el.load_el_profile(df, family_type)
     # compute COP and electrical Power
     df = hf.compute_cop(df,model)
-    df = hd.heat_demand(df, b_type=building_type, b_age=building_year,t_design=-15, A=area)
+    #df = hd.heat_demand(df, b_type=building_type, b_age=building_year, A=area)
+    df = hd.simulate(df, b_type=building_type, b_age=building_year, A=area)
     df = hf.compute_P_electrical(df)
 
     # compute total quantities
@@ -170,6 +167,7 @@ def update_dashboard(zip_code, start_date, end_date, building_type, building_yea
         html.Div(f"Total heat demand:       {total_heat:.1f} kWh"),
         html.Div(f"Total electrical energy: {total_electrical_energy:.1f} kWh"),
         html.Div(f"SPF:                     {spf:.1f}"),
+        html.Div(f"Heat Pump Power:         {hd.heat_pump_size(b_type=building_type, b_age=building_year, A=area)} kW")
     ])
     return fig, fig2, df.columns.values, df.columns.values, df.columns.values, df.columns.values
 
