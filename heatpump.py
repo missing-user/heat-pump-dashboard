@@ -13,7 +13,7 @@ def cop_carnot(df, t_vl=35., degradation_coeff=.5):
     return df
 
 def compute_P_electrical(df):
-    df.loc[:, 'P_el'] = df.loc[:, 'Q_H'] / df.loc[:, 'COP']
-    df.loc[df['Q_H'] == 0, 'COP'] = np.nan
+    df.loc[:, 'P_el'] = df.loc[:, 'Q_dot_H'] / df.loc[:, 'COP']
+    df.loc[df['Q_dot_H'] == 0, 'COP'] = np.nan
     return df
 

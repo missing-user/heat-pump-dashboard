@@ -116,7 +116,7 @@ def update_dashboard(zip_code, start_date, end_date, building_type, building_yea
     if not y2:
         y2 = 'emissions [kg CO2eq]'
     if not y3:
-        y3 = 'Q_H'
+        y3 = 'Q_dot_H'
     if not y4:
         y4 = 'P_el'
 
@@ -131,7 +131,7 @@ def update_dashboard(zip_code, start_date, end_date, building_type, building_yea
     # compute total quantities
     df["emissions [kg CO2eq]"] = df["P_el"] * df["Intensity [g CO2eq/kWh]"] * 1e-3
     total_emission = df["emissions [kg CO2eq]"].sum()
-    total_heat = df['Q_H'].sum()
+    total_heat = df['Q_dot_H'].sum()
     total_electrical_energy = df['P_el'].sum()
     spf = total_heat/total_electrical_energy
 
