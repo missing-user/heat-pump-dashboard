@@ -5,7 +5,7 @@ import plotly.graph_objects as go
 import plotly.io as pio
 from plotly.subplots import make_subplots
 import pandas as pd
-import heatpump as hf
+import heatings
 import electricity as el
 import heatdemand as hd
 
@@ -119,18 +119,23 @@ def update_dashboard(zip_code, start_date, end_date, building_type, building_yea
     # fetch data
     df = fetch_data(start_date,end_date,zip_code)
     df = el.load_el_profile(df, family_type)
-    # compute COP and electrical Power
-    df = hf.compute_cop(df,model)
+    # compute P and electrical Power
+    df = heatings.compute_cop(df,model)
     #df = hd.heat_demand(df, b_type=building_type, b_age=building_year, A=area)
     df = hd.simulate(df, b_type=building_type, b_age=building_year, A=area)
-    df = hf.compute_P_electrical(df)
+    df = heatings.compute_P_electrical(df)
+    df = heatings.gas_heating(df)
+    df = heatings.oil_heating(df)
+
 
     # compute total quantities
-    df["emissions [kg CO2eq]"] = df["P_el"] * df["Intensity [g CO2eq/kWh]"] * 1e-3
-    total_emission = df["emissions [kg CO2eq]"].sum()
-    total_heat = df['Q_dot_H'].sum()
-    total_electrical_energy = df['P_el'].sum()
-    spf = total_heat/total_electrical_energy
+    df["heat pump emissions [kg CO2eq]"] = df["P_el heat pump [kW]"] * df["Intensity [g CO2eq/kWh]"] * 1e-3
+    total_emission_hp = df["heat pump emissions [kg CO2eq]"].sum()
+    total_emission_gas = df["Gas heating emissions [kg CO2eq"].sum()
+    total_emission_oil = df["Oil heating emissions [kg CO2eq"].sum()
+    total_heat = df['Q_dot_H [kW]'].sum()
+    total_electrical_energy_hp = df['P_el heat pump [kW]'].sum()
+    spf = total_heat/total_electrical_energy_hp
 
     # generate plots
     fig = make_subplots(rows=2, cols=2, shared_xaxes=True).update_layout(height=900)
@@ -163,10 +168,12 @@ def update_dashboard(zip_code, start_date, end_date, building_type, building_yea
 
     # display total quantities
     fig2 = html.Div(children=[
-        html.Div(f"Total emissions:         {total_emission:.1f} kg CO2eq"),
-        html.Div(f"Total heat demand:       {total_heat:.1f} kWh"),
-        html.Div(f"Total electrical energy: {total_electrical_energy:.1f} kWh"),
-        html.Div(f"SPF:                     {spf:.1f}"),
+        html.Div(f"Total CO2 emissions (heat pump):     {total_emission_hp:.1f} kg CO2eq"),
+        html.Div(f"Total heat demand:                   {total_heat:.1f} kWh"),
+        html.Div(f"Total electrical energy (heat pump): {total_electrical_energy_hp:.1f} kWh"),
+        html.Div(f"Total CO2 emissions (oil heating):   {total_emission_oil:.1f} kg CO2eq"),
+        html.Div(f"Total CO2 emissions (gas heating):   {total_emission_gas:.1f} kg CO2eq"),
+        html.Div(f"SPF:                                 {spf:.1f}"),
         html.Div(f"Heat Pump Power:         {hd.heat_pump_size(b_type=building_type, b_age=building_year, A=area)} kW")
     ])
     return fig, fig2, df.columns.values, df.columns.values, df.columns.values, df.columns.values

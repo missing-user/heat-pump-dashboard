@@ -13,10 +13,10 @@ def heat_demand(df, b_type, b_age, t_design, A):
   t_lim = tab_heat_demand.loc[tab_heat_demand["building_type"]== "Heizgrenztemperatur", b_age].iloc[0]
   m = -q_dot_H_design/(abs(t_design)+t_lim)
   c = q_dot_H_design - abs(t_design) * (q_dot_H_design/(abs(t_design)+t_lim))
-  t_amb = df["temp"]
-  df['q_dot_H'] = m*t_amb+c
-  df["q_dot_H"].clip(0,q_dot_H_design,inplace=True) # W/m^2
-  df["Q_dot_H"]=df['q_dot_H']*A*.001 # kW
+  t_amb = df["temp [°C]"]
+  df['q_dot_H [kW/m2]'] = m*t_amb+c
+  df["q_dot_H [kW/m2]"].clip(0,q_dot_H_design,inplace=True)
+  df["Q_dot_H [kW]"]=df['q_dot_H [kW/m2]'] * A
   return df
 
 
@@ -33,7 +33,7 @@ def simulate(df, b_type, b_age, A, t_target=20):
   timestep = 3600 # h
 
   df["Q_H"] = t_target * C # 15°C to kJ
-  df["Q_dot_loss"] = 0.0
+  df["Q_dot_loss [kW]"] = 0.0
   df["Q_dot_H"] = 0.0
   for i in range(len(df)-1):
       T_inside = df["Q_H"].iloc[i]/C
