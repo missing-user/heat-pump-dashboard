@@ -28,7 +28,7 @@ def load_TRY(selection:str):
     trydf =  pd.read_csv(filename, delim_whitespace=True, skiprows=34).dropna()
     trydf["year"] = 2045
     trydf["Date"] = pd.to_datetime(dict(year=trydf["year"], month=trydf["MM"], day=trydf["DD"], hour=trydf["HH"]))
-    trydf = trydf.rename(columns={"t":"temp"})
+    trydf = trydf.rename(columns={"t":"temp [°C]"})
     trydf = trydf.set_index("Date")
     return trydf
   return None
@@ -43,9 +43,9 @@ def fetch_all(country_code, zip_code, start:datetime|str, end:datetime|str):
 
   lat, lon = geopos_from_zipcode(country_code, zip_code)
   if lat is None or lon is None:
-    return pd.DataFrame(columns=["temp"])
+    return pd.DataFrame(columns=["temp [°C]"])
   
   location = Point(lat, lon, 500) # default altitude 500
   data = Hourly(location, start, end)
-  return data.fetch()
+  return data.fetch().rename(columns={'temp':'temp [°C]'},inplace=False)
 
