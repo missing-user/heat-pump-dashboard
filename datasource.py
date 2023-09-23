@@ -7,13 +7,14 @@ import co2intensity
 def fetch_all(country_code, zip_code, start, end, TRY_dataset=None):
   tmpdf = co2intensity.load_all()
   
-  if isinstance(TRY_dataset,str):
+  if isinstance(TRY_dataset, str):
     # TODO: All the years of other data should be shifted to 2045
     df = temperatures.load_TRY(TRY_dataset)
     delta = df.index[0] - pd.to_datetime(start)
-    delta = datetime.datetime(delta.year, 1, 1)
+    delta = pd.Timedelta(delta.year, 1, 1)
   else: 
     df = temperatures.fetch_all(country_code, zip_code, start, end)
+    
   df = df.join(tmpdf, how="inner")
   
   return df
