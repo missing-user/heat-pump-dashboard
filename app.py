@@ -148,7 +148,7 @@ def update_dashboard(zip_code, start_date, end_date, building_type, building_yea
         fig.add_trace(px.histogram(df, x=df.index, y=y2).update_traces(xbins_size="M1").data[0], row=1, col=2)
 
     if s3 == 'line':
-        fig.add_trace(px.line(df,y=y1).data[0], row=2, col=1)
+        fig.add_trace(px.line(df,y=y3).data[0], row=2, col=1)
     elif s3 == 'bar':
         fig.add_trace(px.histogram(df, x=df.index, y=y3).update_traces(xbins_size="M1").data[0], row=2, col=1)
 
