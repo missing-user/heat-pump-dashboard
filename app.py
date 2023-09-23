@@ -61,8 +61,6 @@ app.layout = html.Div([
         ),
         html.Div(id='selected-heat-pump-model'),
         dcc.Store(id='data'),
-        html.Button(id='compute', n_clicks=0, children='compute'),
-
         html.Br(),
         dcc.Dropdown(id='plot1-quantity', multi=False, placeholder="(mandatory) Select (multiple) y-Value(s)"),
         dcc.Dropdown(id='plot2-quantity', multi=False, placeholder="(mandatory) Select (multiple) y-Value(s)"),
