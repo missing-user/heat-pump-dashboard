@@ -23,7 +23,7 @@ app.layout = html.Div([
     html.Div(children=[
         html.Label('Enter location for weather data:'),
         html.Label("Zip Code"),
-        dcc.Input(id="zip-input", type="number", value=80333, placeholder="Enter a Zip Code", debounce=True),
+        dcc.Input(id="zip-input", type="number", value=80333, placeholder="Enter a Zip Code", debounce=True, persistence=True),
         html.Label('Pick date range for simulation'),
         dcc.DatePickerRange(
             id='weather-date-picker-range',
@@ -33,26 +33,26 @@ app.layout = html.Div([
             initial_visible_month=date(2021, 1, 1),
             start_date=date(2021,1,1),
             end_date=date(2021, 12, 31),
-            updatemode='bothdates',
+            updatemode='bothdates', persistence=True
         ),
         html.Div(id='selected-date'),
         html.Label('Select building type'),
         dcc.Dropdown(
             id='building-dropdown',
             options=hd.tab_heat_demand["building_type"],
-            value=hd.tab_heat_demand.iloc[0,0],
+            value=hd.tab_heat_demand.iloc[0,0], persistence=True
         ),
         dcc.Dropdown(
             id='building-year-dropdown',
             options=hd.tab_heat_demand.columns[1:],
-            value=hd.tab_heat_demand.columns[3],
+            value=hd.tab_heat_demand.columns[3], persistence=True
         ),
         dcc.Dropdown(id="family-type-dropdown",
                      options=[{"label":l,"value": v}for l,v in zip(el.list_readable_electricity_profiles(), el.list_electricity_profiles())],
-                     value=el.list_electricity_profiles()[0]),
+                     value=el.list_electricity_profiles()[0],persistence=True),
 
-        dcc.Input(id='area',min=1,value=120,type='number', placeholder="Enter area", debounce=True),
-
+        dcc.Input(id='area',min=1,value=120,type='number', placeholder="Enter area", debounce=True,persistence=True),
+        dcc.Slider(id="vorlauftemp-slider", min=35, max=80, value=35, marks={20:"20°C", 50:"50°C", 80:"80°C"},persistence=True),
         html.Label('Select model for heat pump'),
 
         dcc.Dropdown(
@@ -61,15 +61,15 @@ app.layout = html.Div([
                 {'label': 'Carnot', 'value': 'Carnot'},
                 {'label': 'sophisticated', 'value': 'soph'},
             ],
-            value='Carnot'
+            value='Carnot',persistence=True
         ),
         html.Div(id='selected-heat-pump-model'),
         dcc.Store(id='data'),
         html.Br(),
-        dcc.Dropdown(id='plot1-quantity', multi=False, value="temp", placeholder="(mandatory) Select (multiple) y-Value(s)"),
-        dcc.Dropdown(id='plot2-quantity', multi=False, value="temp", placeholder="(mandatory) Select (multiple) y-Value(s)"),
-        dcc.Dropdown(id='plot3-quantity', multi=False, value="temp", placeholder="(mandatory) Select (multiple) y-Value(s)"),
-        dcc.Dropdown(id='plot4-quantity', multi=False, value="T_house", placeholder="(mandatory) Select (multiple) y-Value(s)"),
+        dcc.Dropdown(id='plot1-quantity', multi=False, value="temp [°C]", placeholder="(mandatory) Select (multiple) y-Value(s)",persistence=True),
+        dcc.Dropdown(id='plot2-quantity', multi=False, value="temp [°C]", placeholder="(mandatory) Select (multiple) y-Value(s)",persistence=True),
+        dcc.Dropdown(id='plot3-quantity', multi=False, value="temp [°C]", placeholder="(mandatory) Select (multiple) y-Value(s)",persistence=True),
+        dcc.Dropdown(id='plot4-quantity', multi=False, value="T_house [°C]", placeholder="(mandatory) Select (multiple) y-Value(s)",persistence=True),
         html.Div([html.Label("Plot 1 Style: "), dcc.RadioItems(["line", "bar"], "line", id="plot1-style", style={"display" : "inline-block"})]),
         html.Div([html.Label("Plot 2 Style: "), dcc.RadioItems(["line", "bar"], "line", id="plot2-style", style={"display" : "inline-block"})]),
         html.Div([html.Label("Plot 3 Style: "), dcc.RadioItems(["line", "bar"], "line", id="plot3-style", style={"display" : "inline-block"})]),
@@ -103,6 +103,7 @@ app.layout = html.Div([
     Input('building-year-dropdown','value'),
     Input("family-type-dropdown", "value"),
     Input('area', 'value'),
+    Input("vorlauftemp-slider", "value"),
     Input('heatpump-model','value'),
     Input('plot1-quantity','value'),
     Input('plot2-quantity','value'),
@@ -113,14 +114,14 @@ app.layout = html.Div([
     Input('plot3-style','value'),
     Input('plot4-style','value'),
     )
-def update_dashboard(zip_code, start_date, end_date, building_type, building_year, family_type, area, model, y1, y2, y3, y4, s1, s2, s3, s4):
+def update_dashboard(zip_code, start_date, end_date, building_type, building_year, family_type, area, vorlauf_temp, model, y1, y2, y3, y4, s1, s2, s3, s4):
     ctx = dash.callback_context
 
     # fetch data
     df = fetch_data(start_date,end_date,zip_code)
     df = el.load_el_profile(df, family_type)
     # compute P and electrical Power
-    df = heatings.compute_cop(df,model)
+    df = heatings.compute_cop(df,model,vorlauf_temp)
     #df = hd.heat_demand(df, b_type=building_type, b_age=building_year, A=area)
     df = hd.simulate(df, b_type=building_type, b_age=building_year, A=area)
     df = heatings.compute_P_electrical(df)
@@ -176,6 +177,14 @@ def update_dashboard(zip_code, start_date, end_date, building_type, building_yea
         html.Div(f"SPF:                                 {spf:.1f}"),
         html.Div(f"Heat Pump Power:         {hd.heat_pump_size(b_type=building_type, b_age=building_year, A=area)} kW")
     ])
+
+    fig = px.line(df, y=[y1,y2,y3])
+    marks = df[y1] < df[y3]
+    marks = marks.loc[marks.diff() != 0]    
+    for i in range(len(marks)):
+        if marks[i]:
+            fig.add_vrect(x0=marks.index[i], x1=marks.index[i+1], fillcolor="red", opacity=0.25, layer="below", line_width=0)
+
     return fig, fig2, df.columns.values, df.columns.values, df.columns.values, df.columns.values
 
 def fetch_data(start_date,end_date,zip_code):

@@ -32,20 +32,20 @@ def simulate(df, b_type, b_age, A, t_target=20):
   C = 328000    # kJ/K
   timestep = 3600 # h
 
-  df["Q_H"] = t_target * C # 15°C to kJ
+  df["Q_H [kJ]"] = t_target * C # 15°C to kJ
   df["Q_dot_loss [kW]"] = 0.0
-  df["Q_dot_H"] = 0.0
+  df["Q_dot_H [kW]"] = 0.0
   for i in range(len(df)-1):
-      T_inside = df["Q_H"].iloc[i]/C
-      T_outside = df["temp"].iloc[i]
-      df["Q_dot_loss"].iloc[i] = Q_dot = (T_outside - T_inside)*UA # kW
+      T_inside = df["Q_H [kJ]"].iloc[i]/C
+      T_outside = df["temp [°C]"].iloc[i]
+      df["Q_dot_loss [kW]"].iloc[i] = Q_dot = (T_outside - T_inside)*UA # kW
       #Q_dot += 100 # 100W heating for each habitant
+      Q_dot += df["P_el appliances [W]"].iloc[i]*1e-3 # appliances
 
+      df["Q_dot_H [kW]"].iloc[i] = get_heatpump_Q_dot(T_inside, t_target, max(0,min(-Q_dot, Q_dot_H_design)))
+      Q_dot += df["Q_dot_H [kW]"].iloc[i] # heat pump
 
-      df["Q_dot_H"].iloc[i] = get_heatpump_Q_dot(T_inside, t_target, max(0,min(-Q_dot, Q_dot_H_design)))
-      Q_dot += df["Q_dot_H"].iloc[i] # heat pump
+      df["Q_H [kJ]"].iloc[i+1] = df["Q_H [kJ]"].iloc[i] + Q_dot*timestep
 
-      df["Q_H"].iloc[i+1] = df["Q_H"].iloc[i] + Q_dot*timestep
-
-  df["T_house"] = df["Q_H"]/C # kJ to °C
+  df["T_house [°C]"] = df["Q_H [kJ]"]/C # kJ to °C
   return df

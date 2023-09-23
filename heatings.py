@@ -1,14 +1,14 @@
 import numpy as np
 
-def compute_cop(df,model):
+def compute_cop(df,model, t_vl=35.):
     df.loc[:, 'COP heatpump'] = np.nan
     if model == 'Carnot':
-        df = cop_carnot(df)
+        df = cop_carnot(df, t_vl)
     elif model == 'soph':
         df.loc[:, 'COP heatpump'] = 1
     return df
 
-def cop_carnot(df, t_vl=35., degradation_coeff=.5):
+def cop_carnot(df, t_vl, degradation_coeff=.5):
     df.loc[:, 'COP heatpump'] = degradation_coeff * (273.15 + t_vl) / (t_vl - df.loc[:, 'temp [°C]'])
     return df
 
