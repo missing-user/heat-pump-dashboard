@@ -138,9 +138,9 @@ def update_dashboard(zip_code, start_date, end_date, building_type, building_yea
 
     # display total quantities
     fig2 = html.Div(children=[
-        html.Div(f"Total CO2 emissions (heat pump):     {total_emission_hp:.1f} kg CO2eq"),
         html.Div(f"Total heat demand:                   {total_heat:.1f} kWh"),
         html.Div(f"Total electrical energy (heat pump): {total_electrical_energy_hp:.1f} kWh"),
+        html.Div(f"Total CO2 emissions (heat pump):     {total_emission_hp:.1f} kg CO2eq"),
         html.Div(f"Total CO2 emissions (oil heating):   {total_emission_oil:.1f} kg CO2eq"),
         html.Div(f"Total CO2 emissions (gas heating):   {total_emission_gas:.1f} kg CO2eq"),
         html.Div(f"SPF:                                 {spf:.1f}"),
