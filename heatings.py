@@ -24,7 +24,7 @@ def gas_heating(df):
 
     # compute power demand and emissions
     df.loc[:, 'Gas demand [kWh]'] = df.loc[:,'Q_dot_H [kW]'] / df.loc[:,'eta gas heating']
-    df.loc[:, 'Gas heating emissions [kg CO2eq'] = df.loc[:, 'Gas demand [kWh]'] * intensity * 1e-3
+    df.loc[:, 'Gas heating emissions [kg CO2eq]'] = df.loc[:, 'Gas demand [kWh]'] * intensity * 1e-3
     return df
 
 def oil_heating(df):
@@ -34,5 +34,5 @@ def oil_heating(df):
 
     # compute power demand and emissions
     df.loc[:, 'Oil demand [kWh]'] = df.loc[:,'Q_dot_H [kW]'] /df.loc[:,'eta oil heating']
-    df.loc[:, 'Oil heating emissions [kg CO2eq'] = df.loc[:, 'Gas demand [kWh]'] * intensity * 1e-3
+    df.loc[:, 'Oil heating emissions [kg CO2eq]'] = df.loc[:, 'Gas demand [kWh]'] * intensity * 1e-3
     return df

@@ -13,6 +13,9 @@ import datasource
 from datetime import datetime, date
 import numpy as np
 
+from joblib import Memory
+memory = Memory("cache", verbose=0)
+
 pio.templates.default = "plotly_white"
 
 # Initialize the Dash app
@@ -83,13 +86,16 @@ app.layout = html.Div([
             ], style={'display':'inline-block', 'width':'40%'}),
         ]),
         dcc.Loading(dcc.Graph(id='plot1')),
+        dcc.Loading(dcc.Graph(id='plot2')),
         html.H2('Total emissions:'),
         html.Div(id='total-emissions'),
      ], style={'width': '100%'})
 ], style = {'display':'flex'})
 
+
+
 @callback(
-    Output('plot1','figure'),
+    Output('data','data'),
     Output('total-emissions','children'),
     Output('plot1-quantity','options'),
     Output('plot2-quantity','options'),
@@ -105,16 +111,8 @@ app.layout = html.Div([
     Input('area', 'value'),
     Input("vorlauftemp-slider", "value"),
     Input('heatpump-model','value'),
-    Input('plot1-quantity','value'),
-    Input('plot2-quantity','value'),
-    Input('plot3-quantity','value'),
-    Input('plot4-quantity','value'),
-    Input('plot1-style','value'),
-    Input('plot2-style','value'),
-    Input('plot3-style','value'),
-    Input('plot4-style','value'),
     )
-def update_dashboard(zip_code, start_date, end_date, building_type, building_year, family_type, area, vorlauf_temp, model, y1, y2, y3, y4, s1, s2, s3, s4):
+def update_dashboard(zip_code, start_date, end_date, building_type, building_year, family_type, area, vorlauf_temp, model):
     ctx = dash.callback_context
 
     # fetch data
@@ -132,11 +130,42 @@ def update_dashboard(zip_code, start_date, end_date, building_type, building_yea
     # compute total quantities
     df["heat pump emissions [kg CO2eq]"] = df["P_el heat pump [kW]"] * df["Intensity [g CO2eq/kWh]"] * 1e-3
     total_emission_hp = df["heat pump emissions [kg CO2eq]"].sum()
-    total_emission_gas = df["Gas heating emissions [kg CO2eq"].sum()
-    total_emission_oil = df["Oil heating emissions [kg CO2eq"].sum()
+    total_emission_gas = df["Gas heating emissions [kg CO2eq]"].sum()
+    total_emission_oil = df["Oil heating emissions [kg CO2eq]"].sum()
     total_heat = df['Q_dot_H [kW]'].sum()
     total_electrical_energy_hp = df['P_el heat pump [kW]'].sum()
     spf = total_heat/total_electrical_energy_hp
+
+    # display total quantities
+    fig2 = html.Div(children=[
+        html.Div(f"Total CO2 emissions (heat pump):     {total_emission_hp:.1f} kg CO2eq"),
+        html.Div(f"Total heat demand:                   {total_heat:.1f} kWh"),
+        html.Div(f"Total electrical energy (heat pump): {total_electrical_energy_hp:.1f} kWh"),
+        html.Div(f"Total CO2 emissions (oil heating):   {total_emission_oil:.1f} kg CO2eq"),
+        html.Div(f"Total CO2 emissions (gas heating):   {total_emission_gas:.1f} kg CO2eq"),
+        html.Div(f"SPF:                                 {spf:.1f}"),
+        html.Div(f"Heat Pump Power:         {hd.heat_pump_size(b_type=building_type, b_age=building_year, A=area)} kW")
+    ])
+
+    return {"data-frame": df.to_dict("records")}, fig2, df.columns.values, df.columns.values, df.columns.values, df.columns.values
+
+@app.callback(
+    Output('plot1','figure'),
+    Output('plot2','figure'),
+
+    Input('data','data'),
+    Input('plot1-quantity','value'),
+    Input('plot2-quantity','value'),
+    Input('plot3-quantity','value'),
+    Input('plot4-quantity','value'),
+    Input('plot1-style','value'),
+    Input('plot2-style','value'),
+    Input('plot3-style','value'),
+    Input('plot4-style','value'),
+    prevent_initial_call=True)
+def draw_plot(df_json, y1, y2, y3, y4, s1, s2, s3, s4):
+    df = pd.DataFrame(df_json["data-frame"])
+    print(df.columns)
 
     # generate plots
     fig = make_subplots(rows=2, cols=2, shared_xaxes=True).update_layout(height=900)
@@ -159,7 +188,6 @@ def update_dashboard(zip_code, start_date, end_date, building_type, building_yea
         fig.add_trace(px.line(df,y=y4).data[0], row=2, col=2)
     elif s4 == 'bar':
         fig.add_trace(px.histogram(df, x=df.index, y=y4).update_traces(xbins_size="M1").data[0], row=2, col=2)
-
     
     # Add y axis labels
     fig.update_yaxes(title_text=y1, row=1, col=1)
@@ -167,26 +195,20 @@ def update_dashboard(zip_code, start_date, end_date, building_type, building_yea
     fig.update_yaxes(title_text=y3, row=2, col=1)
     fig.update_yaxes(title_text=y4, row=2, col=2)
 
-    # display total quantities
-    fig2 = html.Div(children=[
-        html.Div(f"Total CO2 emissions (heat pump):     {total_emission_hp:.1f} kg CO2eq"),
-        html.Div(f"Total heat demand:                   {total_heat:.1f} kWh"),
-        html.Div(f"Total electrical energy (heat pump): {total_electrical_energy_hp:.1f} kWh"),
-        html.Div(f"Total CO2 emissions (oil heating):   {total_emission_oil:.1f} kg CO2eq"),
-        html.Div(f"Total CO2 emissions (gas heating):   {total_emission_gas:.1f} kg CO2eq"),
-        html.Div(f"SPF:                                 {spf:.1f}"),
-        html.Div(f"Heat Pump Power:         {hd.heat_pump_size(b_type=building_type, b_age=building_year, A=area)} kW")
-    ])
-
-    fig = px.line(df, y=[y1,y2,y3])
-    marks = df[y1] < df[y3]
-    marks = marks.loc[marks.diff() != 0]    
+    fig2 = px.line(df, y=['Oil heating emissions [kg CO2eq]',
+                          'Gas heating emissions [kg CO2eq]',
+                          'heat pump emissions [kg CO2eq]'])
+    
+    marks = df['heat pump emissions [kg CO2eq]'] > df['Gas heating emissions [kg CO2eq]']
+    marks = marks.loc[marks.diff() != 0]
     for i in range(len(marks)):
-        if marks[i]:
-            fig.add_vrect(x0=marks.index[i], x1=marks.index[i+1], fillcolor="red", opacity=0.25, layer="below", line_width=0)
+        if marks.iat[i] > 0:
+            fig2.add_vrect(x0=marks.index[i], x1=marks.index[i+1], fillcolor="red", opacity=0.25, layer="below", line_width=0)
 
-    return fig, fig2, df.columns.values, df.columns.values, df.columns.values, df.columns.values
+    return fig, fig2
 
+
+@memory.cache
 def fetch_data(start_date,end_date,zip_code):
     if start_date and end_date and zip_code:
         start_date_object = datetime.fromisoformat(start_date)

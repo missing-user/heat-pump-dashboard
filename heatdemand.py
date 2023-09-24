@@ -23,9 +23,9 @@ def heat_demand(df, b_type, b_age, t_design, A):
 def get_heatpump_Q_dot(t_current, t_target, Q_dot_H_design):
    if t_current <= t_target:
       return Q_dot_H_design
-   return 0
+   return 0.0
 
-def simulate(df, b_type, b_age, A, t_target=20):
+def simulate(df, b_type, b_age, A, t_target=20.0):
   Q_dot_H_design = heat_pump_size(b_type, b_age, A)
   
   UA = 582e-3   # kW/K
