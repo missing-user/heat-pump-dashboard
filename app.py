@@ -147,7 +147,7 @@ def update_dashboard(zip_code, start_date, end_date, building_type, building_yea
         html.Div(f"Heat Pump Power:         {hd.heat_pump_size(b_type=building_type, b_age=building_year, A=area)} kW")
     ])
 
-    return {"data-frame": df.to_dict("records")}, fig2, df.columns.values, df.columns.values, df.columns.values, df.columns.values
+    return {"data-frame": df.reset_index().to_dict("records")}, fig2, df.columns.values, df.columns.values, df.columns.values, df.columns.values
 
 @app.callback(
     Output('plot1','figure'),
@@ -164,8 +164,7 @@ def update_dashboard(zip_code, start_date, end_date, building_type, building_yea
     Input('plot4-style','value'),
     prevent_initial_call=True)
 def draw_plot(df_json, y1, y2, y3, y4, s1, s2, s3, s4):
-    df = pd.DataFrame(df_json["data-frame"])
-    print(df.columns)
+    df = pd.DataFrame(df_json["data-frame"]).set_index("index")
 
     # generate plots
     fig = make_subplots(rows=2, cols=2, shared_xaxes=True).update_layout(height=900)

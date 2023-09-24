@@ -20,19 +20,17 @@ def compute_P_electrical(df):
 def gas_heating(df):
     # constants for gas heating
     intensity = 200.8 # [g CO2/kWh] primary energy
-    df.loc[:,'eta gas heating'] = .95
+    eta = .95
 
     # compute power demand and emissions
-    df.loc[:, 'Gas demand [kWh]'] = df.loc[:,'Q_dot_H [kW]'] / df.loc[:,'eta gas heating']
-    df.loc[:, 'Gas heating emissions [kg CO2eq]'] = df.loc[:, 'Gas demand [kWh]'] * intensity * 1e-3
+    df.loc[:, 'Gas heating emissions [kg CO2eq]'] = df.loc[:,'Q_dot_H [kW]'] / eta * intensity * 1e-3
     return df
 
 def oil_heating(df):
     # constants for oil heating
     intensity = 266.5 # [g CO2/kWh] primary energy
-    df.loc[:,'eta oil heating'] = .95
+    eta = .95
 
     # compute power demand and emissions
-    df.loc[:, 'Oil demand [kWh]'] = df.loc[:,'Q_dot_H [kW]'] /df.loc[:,'eta oil heating']
-    df.loc[:, 'Oil heating emissions [kg CO2eq]'] = df.loc[:, 'Gas demand [kWh]'] * intensity * 1e-3
+    df.loc[:, 'Oil heating emissions [kg CO2eq]'] = df.loc[:,'Q_dot_H [kW]'] / eta * intensity * 1e-3
     return df
