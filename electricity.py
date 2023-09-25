@@ -21,4 +21,5 @@ def load_el_profile(df:pd.DataFrame, path):
      
      df.update(df_el.set_index("unixtimestamp"))
 
+  df["P_el appliances [kW]"] *= 0.95 # larissas presentation
   return df
