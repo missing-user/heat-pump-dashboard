@@ -56,7 +56,8 @@ app.layout = html.Div([
 
         dcc.Input(id='area', min=1,value=120,type='number', placeholder="Enter area", debounce=True, persistence=True),
         dcc.Input(id="window-area", min=0,value=20,type='number', placeholder="Enter window area", debounce=True, persistence=True),
-        dcc.Slider(id="vorlauftemp-slider", min=35, max=80, value=35, marks={20:"20°C", 50:"50°C", 80:"80°C"},persistence=True),
+        dcc.Slider(id="vorlauftemp-slider", min=35, max=80, value=35, persistence=True),
+        dcc.Slider(id="target-temp-slider", min=15, max=25, value=20, persistence=True),
         html.Label('Select model for heat pump'),
 
         dcc.Dropdown(
@@ -107,16 +108,17 @@ app.layout = html.Div([
     Input('area', 'value'),
     Input('window-area', 'value'),
     Input("vorlauftemp-slider", "value"),
+    Input("target-temp-slider", "value"),
     Input('heatpump-model','value'),
     )
-def update_dashboard(zip_code, start_date, end_date, building_type, building_year, family_type, area, window_area, vorlauf_temp, model):
+def update_dashboard(zip_code, start_date, end_date, building_type, building_year, family_type, area, window_area, vorlauf_temp, temperature_target, model):
     # fetch data
     df = fetch_data(start_date,end_date,zip_code)
     df = el.load_el_profile(df, family_type)
     # compute P and electrical Power
     df = heatings.compute_cop(df,model,vorlauf_temp)
     df = hd.simulate(df, b_type=building_type, b_age=building_year, 
-                     A_windows=window_area, A=area)
+                     A_windows=window_area, A=area, t_target=temperature_target)
     df = heatings.compute_P_electrical(df)
     df = heatings.gas_heating(df)
     df = heatings.oil_heating(df)
