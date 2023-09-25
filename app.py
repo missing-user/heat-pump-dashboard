@@ -54,7 +54,8 @@ app.layout = html.Div([
                      options=[{"label":l,"value": v}for l,v in zip(el.list_readable_electricity_profiles(), el.list_electricity_profiles())],
                      value=el.list_electricity_profiles()[0],persistence=True),
 
-        dcc.Input(id='area',min=1,value=120,type='number', placeholder="Enter area", debounce=True,persistence=True),
+        dcc.Input(id='area', min=1,value=120,type='number', placeholder="Enter area", debounce=True, persistence=True),
+        dcc.Input(id="window-area", min=0,value=20,type='number', placeholder="Enter window area", debounce=True, persistence=True),
         dcc.Slider(id="vorlauftemp-slider", min=35, max=80, value=35, marks={20:"20°C", 50:"50°C", 80:"80°C"},persistence=True),
         html.Label('Select model for heat pump'),
 
@@ -104,23 +105,21 @@ app.layout = html.Div([
     Input('building-year-dropdown','value'),
     Input("family-type-dropdown", "value"),
     Input('area', 'value'),
+    Input('window-area', 'value'),
     Input("vorlauftemp-slider", "value"),
     Input('heatpump-model','value'),
     )
-def update_dashboard(zip_code, start_date, end_date, building_type, building_year, family_type, area, vorlauf_temp, model):
-    ctx = dash.callback_context
-
+def update_dashboard(zip_code, start_date, end_date, building_type, building_year, family_type, area, window_area, vorlauf_temp, model):
     # fetch data
     df = fetch_data(start_date,end_date,zip_code)
     df = el.load_el_profile(df, family_type)
     # compute P and electrical Power
     df = heatings.compute_cop(df,model,vorlauf_temp)
-    #df = hd.heat_demand(df, b_type=building_type, b_age=building_year, A=area)
-    df = hd.simulate(df, b_type=building_type, b_age=building_year, A=area)
+    df = hd.simulate(df, b_type=building_type, b_age=building_year, 
+                     A_windows=window_area, A=area)
     df = heatings.compute_P_electrical(df)
     df = heatings.gas_heating(df)
     df = heatings.oil_heating(df)
-
 
     # compute total quantities
     df["heat pump emissions [kg CO2eq]"] = df["P_el heat pump [kW]"] * df["Intensity [g CO2eq/kWh]"] * 1e-3
@@ -158,36 +157,12 @@ def update_dashboard(zip_code, start_date, end_date, building_type, building_yea
 def draw_plot(df_json, y1, y2, s1, s2):
     df = pd.DataFrame(df_json["data-frame"]).set_index("index")
 
+    print(y1, y2, [df[t].dtype for t in [*y1, *y2]])
+
     fig = px.line(df,y=y1) if s1 == 'line' else px.histogram(df, x=df.index, y=y1).update_traces(xbins_size="M1")
     fig2 = px.line(df,y=y2) if s2 == 'line' else px.histogram(df, x=df.index, y=y2).update_traces(xbins_size="M1")
     # generate plots
-    # fig = make_subplots(rows=2, cols=2, shared_xaxes=True).update_layout(height=900)
-    # if s1 == 'line':
-    #     fig.add_trace(px.line(df,y=y1).data[0], row=1, col=1)
-    # elif s1 == 'bar':
-    #     fig.add_trace(px.histogram(df, x=df.index, y=y1).update_traces(xbins_size="M1").data[0], row=1, col=1)
-
-    # if s2 == 'line':
-    #     fig.add_trace(px.line(df,y=y2).data[0], row=1, col=2)
-    # elif s2 == 'bar':
-    #     fig.add_trace(px.histogram(df, x=df.index, y=y2).update_traces(xbins_size="M1").data[0], row=1, col=2)
-
-    # if s3 == 'line':
-    #     fig.add_trace(px.line(df,y=y3).data[0], row=2, col=1)
-    # elif s3 == 'bar':
-    #     fig.add_trace(px.histogram(df, x=df.index, y=y3).update_traces(xbins_size="M1").data[0], row=2, col=1)
-
-    # if s4 == 'line':
-    #     fig.add_trace(px.line(df,y=y4).data[0], row=2, col=2)
-    # elif s4 == 'bar':
-    #     fig.add_trace(px.histogram(df, x=df.index, y=y4).update_traces(xbins_size="M1").data[0], row=2, col=2)
-    
-    # Add y axis labels
-    # fig.update_yaxes(title_text=y1, row=1, col=1)
-    # fig.update_yaxes(title_text=y2, row=1, col=2)
-    # fig.update_yaxes(title_text=y3, row=2, col=1)
-    # fig.update_yaxes(title_text=y4, row=2, col=2)
-
+   
     fig3 = px.line(df, y=['Oil heating emissions [kg CO2eq]',
                           'Gas heating emissions [kg CO2eq]',
                           'heat pump emissions [kg CO2eq]'])
@@ -201,7 +176,6 @@ def draw_plot(df_json, y1, y2, s1, s2):
     return fig, fig2, fig3
 
 
-#@memory.cache
 def fetch_data(start_date,end_date,zip_code):
     if start_date and end_date and zip_code:
         start_date_object = datetime.fromisoformat(start_date)
@@ -211,4 +185,4 @@ def fetch_data(start_date,end_date,zip_code):
 
 # Run the app
 if __name__ == '__main__':
-    app.run_server(debug=True)
+    app.run_server(debug=False)

@@ -1,4 +1,4 @@
-﻿building_type;until 1958;1959-68;1969-73;1974-77;1978-83;1984-94;1995 - 2001;after 2002;KfW 85;KfW 40;passive_house
+﻿building_type;until 1958;1959-68;1969-73;1974-77;1978-83;1984-94;1995 - 2001;after 2002;KfW 85;KfW 40;passive house
 single_family_house [W/m2];180;170;150;115;95;75;60;45;38;34;23
 terraced_house (end) [W/m2];160;150;130;110;90;70;55;;;;
 tarreced_house [W/m2];140;130;120;100;85;65;50;;;;
