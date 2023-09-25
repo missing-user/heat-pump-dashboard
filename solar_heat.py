@@ -53,25 +53,24 @@ def fetch_all(lat, lon, start: datetime, end: datetime) -> pd.Series:
 
         # Check if the request was successful (status code 200)
         if response.status_code == 200:
+            #global data
             data = pd.read_csv(io.StringIO(response.content.decode('utf-8')), skiprows=8, skipfooter=11, engine='python')
-
-            data['time'] = pd.to_datetime(data['time'], format='%Y%m%d:%H%M')
             
+            # Why 10 minutes? IDK. But the timestamps are 00:10:00, 01:10:00, ...
+            data["time"] = pd.to_datetime(data['time'], format='%Y%m%d:%H%M') - pd.Timedelta(minutes=10)
+            
+            df[f"p_solar {direction} [kW/m2]"] = 0.0
             for year in df.index.year.unique():
-                el_year = data["time"].dt.year[0]
-                # Why 10 minutes? IDK. But the timestamps are 00:10:00, 01:10:00, ...
-                data["time"] -= pd.Timedelta(days=(el_year - year)*365, minutes=10)
+                el_year = data["time"].dt.year.min()
+                data["time"] -= pd.Timedelta(days=(el_year - year)*365)
 
-                #data['time'] = pd.to_datetime(data['time'], format='%Y%m%d:%H%M')
-                data = data[(data['time'] >= start) & (data['time'] <= end)]
-                data.set_index("time", inplace=True)
-
-                #data["G(i)"] = data["Gd(i)"] + data["Gb(i)"] + data["Gr(i)"]
+                data_slice = data[(data['time'] >= start) & (data['time'] <= end)]
+                data_slice[f"p_solar {direction} [kW/m2]"] = 1e-3 * data_slice["G(i)"] * 0.9 * 0.6 * 0.9 # Reduction factors from larissas presentation (except window type)
                 # Convert W/m2 to kW/m2
-                df[f"p_solar {direction} [kW/m2]"] = 1e-3 * data["G(i)"] * 0.9 * 0.6 * 0.9 * 0.7 # Reduction factors from larissas presentation
+                df.update(data_slice.set_index("time"))
         else:
             # Handle the case when the request fails
             print(f"Failed to retrieve data. Status code: {response.status_code} {response.reason}")
             return pd.Series()
 
-    return df.drop(columns=0)
+    return df.drop(columns=0).fillna(0.0)
