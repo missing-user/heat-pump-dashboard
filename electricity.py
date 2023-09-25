@@ -9,10 +9,11 @@ def list_electricity_profiles():
   return glob.glob("data/heatingload/electric/synPRO_el_*.dat")
 
 def load_el_profile(df:pd.DataFrame, path):
-  df_el = pd.read_csv(path, comment="#", sep=";").rename(columns={"P_el":"P_el appliances [W]"}).drop(columns=["YYYYMMDD", "hhmmss"])
+  df_el = pd.read_csv(path, comment="#", sep=";").rename(columns={"P_el":"P_el appliances [kW]"}).drop(columns=["YYYYMMDD", "hhmmss"])
   df_el["unixtimestamp"] = pd.to_datetime(df_el["unixtimestamp"],unit="s") + datetime.timedelta(hours=1)
-  
-  df["P_el appliances [W]"] = 0.0
+  df_el["P_el appliances [kW]"] *= 1e-3 
+
+  df["P_el appliances [kW]"] = 0.0
 
   for year in df.index.year.unique():
      el_year = df_el["unixtimestamp"].dt.year[0]

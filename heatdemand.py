@@ -14,7 +14,7 @@ def heat_demand(df, b_type, b_age, t_design, A):
   t_lim = tab_heat_demand.loc[tab_heat_demand["building_type"]== "Heizgrenztemperatur", b_age].iloc[0]
   m = -q_dot_H_design/(abs(t_design)+t_lim)
   c = q_dot_H_design - abs(t_design) * (q_dot_H_design/(abs(t_design)+t_lim))
-  t_amb = df["temp [°C]"]
+  t_amb = df["T_outside [°C]"]
   df['q_dot_H [kW/m2]'] = m*t_amb+c
   df["q_dot_H [kW/m2]"].clip(0,q_dot_H_design,inplace=True)
   df["Q_dot_H [kW]"]=df['q_dot_H [kW/m2]'] * A
@@ -27,35 +27,38 @@ def get_heatpump_Q_dot(t_current, t_target, Q_dot_H_design):
    return 0.0
 
 
-def simulate_np(P_el_appliances:np.ndarray, temp:np.ndarray, 
+def simulate_np(P_internal:np.ndarray, T_outside_series:np.ndarray, 
                 Q_dot_H_design:float, t_target:float, 
                 UA:float, C:float):
   timestep = 3600 # h
 
-  Q_dot_loss = np.zeros_like(temp)
-  Q_dot_H = np.zeros_like(temp)
-  Q_H = np.zeros_like(temp)
+  Q_dot_loss = np.zeros_like(T_outside_series)
+  Q_dot_H = np.zeros_like(T_outside_series)
+  Q_H = np.zeros_like(T_outside_series)
   Q_H[0] = t_target*C # initial temperature
 
-  for i in range(len(temp)-1):
+  for i in range(len(T_outside_series)-1):
       T_inside = Q_H[i]/C
-      T_outside = temp[i]
+      T_outside = T_outside_series[i]
       Q_dot = Q_dot_loss[i] = (T_outside - T_inside)*UA
-      Q_dot += P_el_appliances[i]*1e-3 # appliances
+      Q_dot += P_internal[i] # appliances
       Q_dot_H[i] = get_heatpump_Q_dot(T_inside, t_target, max(0,min(-Q_dot, Q_dot_H_design)))
 
       Q_dot += Q_dot_H[i] # heat pump
       Q_H[i+1] = Q_H[i] + Q_dot*timestep
   return Q_H, Q_dot_loss, Q_dot_H
 
-def simulate(df, b_type, b_age, A, t_target=20.0):
+def simulate(df, b_type, b_age, A, A_windows=50.0, t_target=20.0):
   Q_dot_H_design = heat_pump_size(b_type, b_age, A)
 
   UA = 582e-3   # kW/K
   C = 328000    # kJ/K
 
-  Q_H, Q_dot_loss, Q_dot_H = simulate_np(df["P_el appliances [W]"].to_numpy(), 
-                                         df["temp [°C]"].to_numpy(), 
+  df["P_solar [kW]"] = A_windows/3 *(df["p_solar south [kW/m2]"]+df["p_solar east [kW/m2]"]+df["p_solar west [kW/m2]"])
+  P_internal = (df["P_el appliances [kW]"] + df["P_solar [kW]"]).to_numpy()
+
+  Q_H, Q_dot_loss, Q_dot_H = simulate_np(P_internal, 
+                                         df["T_outside [°C]"].to_numpy(), 
                                          Q_dot_H_design, t_target, UA, C)
   df["Q_H [kJ]"] = Q_H
   df["Q_dot_loss [kW]"] = Q_dot_loss

@@ -29,7 +29,7 @@ def load_TRY(selection:str):
     trydf =  pd.read_csv(filename, delim_whitespace=True, skiprows=34).dropna()
     trydf["year"] = 2045
     trydf["Date"] = pd.to_datetime(dict(year=trydf["year"], month=trydf["MM"], day=trydf["DD"], hour=trydf["HH"]))
-    trydf = trydf.rename(columns={"t":"temp [°C]"})
+    trydf = trydf.rename(columns={"t":"T_outside [°C]"})
     trydf = trydf.set_index("Date")
     return trydf
   return None
@@ -41,14 +41,18 @@ def fetch_all(country_code, zip_code, start, end, TRY_dataset=None):
   
   if isinstance(TRY_dataset, str):
     # TODO: All the years of other data should be shifted to 2045
-    df = temperatures.load_TRY(TRY_dataset).rename(columns={"T":"temp [°C]", "G":"solar [W/m2]"})
+    df = temperatures.load_TRY(TRY_dataset).rename(columns={"T":"T_outside [°C]", "G":"solar [W/m2]"})
     delta = df.index[0] - pd.to_datetime(start)
     delta = pd.Timedelta(delta.year, 1, 1)
   else: 
     df = temperatures.fetch_all(lat, lon, start, end)
+
     df_sol = solar_heat.fetch_all(lat, lon, start, end)
-    df["solar [W/m2]"] = df_sol["Gd(i)"]
-  df = df.join(tmpdf, how="inner")
+    df["p_solar south [kW/m2]"] = df_sol["p_solar south [kW/m2]"]
+    df["p_solar east [kW/m2]"] = df_sol["p_solar east [kW/m2]"]
+    df["p_solar west [kW/m2]"] = df_sol["p_solar west [kW/m2]"]
+
+    df = df.join(tmpdf, how="inner")
   
   return df
 

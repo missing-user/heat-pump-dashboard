@@ -9,7 +9,7 @@ def compute_cop(df,model, t_vl=35.):
     return df
 
 def cop_carnot(df, t_vl, degradation_coeff=.5):
-    df.loc[:, 'COP heatpump'] = degradation_coeff * (273.15 + t_vl) / (t_vl - df.loc[:, 'temp [°C]'])
+    df.loc[:, 'COP heatpump'] = degradation_coeff * (273.15 + t_vl) / (t_vl - df.loc[:, 'T_outside [°C]'])
     return df
 
 def compute_P_electrical(df):

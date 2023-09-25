@@ -69,8 +69,8 @@ app.layout = html.Div([
         html.Div(id='selected-heat-pump-model'),
         dcc.Store(id='data'),
         html.Br(),
-        dcc.Dropdown(id='plot1-quantity', multi=True, value="temp [°C]", placeholder="(mandatory) Select (multiple) y-Value(s)",persistence=True),
-        dcc.Dropdown(id='plot2-quantity', multi=True, value="temp [°C]", placeholder="(mandatory) Select (multiple) y-Value(s)",persistence=True),
+        dcc.Dropdown(id='plot1-quantity', multi=True, value="T_outside [°C]", placeholder="(mandatory) Select (multiple) y-Value(s)",persistence=True),
+        dcc.Dropdown(id='plot2-quantity', multi=True, value="T_outside [°C]", placeholder="(mandatory) Select (multiple) y-Value(s)",persistence=True),
         html.Div([html.Label("Plot 1 Style: "), dcc.RadioItems(["line", "bar"], "line", id="plot1-style", style={"display" : "inline-block"})]),
         html.Div([html.Label("Plot 2 Style: "), dcc.RadioItems(["line", "bar"], "line", id="plot2-style", style={"display" : "inline-block"})]),
         ], style={'width': '300px'}),
@@ -211,4 +211,4 @@ def fetch_data(start_date,end_date,zip_code):
 
 # Run the app
 if __name__ == '__main__':
-    app.run_server(debug=False)
+    app.run_server(debug=True)

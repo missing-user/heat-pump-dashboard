@@ -53,3 +53,8 @@ Berater: 55000 kWh Waermebedarf
 
 
 Electricity stats for Germany: https://www.smard.de/en/downloadcenter/download-market-data/?downloadAttributes=%7B%22selectedCategory%22:1,%22selectedSubCategory%22:1,%22selectedRegion%22:false,%22selectedFileType%22:%22CSV%22,%22from%22:1514761200000,%22to%22:1672613999999%7D
+
+
+Annahme: 95% von allem elektrischen Verbrauch wird als waerme im Gebaeude frei.
+Sonneneinstrahlung durch die Fenster wird ebenfalls als Waerme gewertet. Fenster sind 1/3 Ost, 1/3 West 1/3 Sud (Einerseits nehmen wir keine Nord Fenster an, andererseits werden auch Dachfenster als vertikale Fenster gewertet und Uebertragungen durch Dach und Waende vernachlassigt)
+ 
