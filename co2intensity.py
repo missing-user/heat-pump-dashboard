@@ -12,6 +12,7 @@ def add_intensity_column(power_df, intensity_df):
   intensity_lookup = intensity_df.set_index("Emissions [g CO2eq/kWh]")
   power_df["MWh sum"] = sum([power_df[col] for col in power_df.columns if "[MWh] Calculated resolutions" in col])
   power_df["Intensity [g CO2eq/kWh]"] = 0.0
+
   for energy_type in power_df.columns:
     if (intensity_df["Emissions [g CO2eq/kWh]"] == energy_type).any():  
       intensity_name = energy_type.replace("[MWh] Calculated resolutions", "[%]")

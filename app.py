@@ -69,14 +69,10 @@ app.layout = html.Div([
         html.Div(id='selected-heat-pump-model'),
         dcc.Store(id='data'),
         html.Br(),
-        dcc.Dropdown(id='plot1-quantity', multi=False, value="temp [°C]", placeholder="(mandatory) Select (multiple) y-Value(s)",persistence=True),
-        dcc.Dropdown(id='plot2-quantity', multi=False, value="temp [°C]", placeholder="(mandatory) Select (multiple) y-Value(s)",persistence=True),
-        dcc.Dropdown(id='plot3-quantity', multi=False, value="temp [°C]", placeholder="(mandatory) Select (multiple) y-Value(s)",persistence=True),
-        dcc.Dropdown(id='plot4-quantity', multi=False, value="T_house [°C]", placeholder="(mandatory) Select (multiple) y-Value(s)",persistence=True),
+        dcc.Dropdown(id='plot1-quantity', multi=True, value="temp [°C]", placeholder="(mandatory) Select (multiple) y-Value(s)",persistence=True),
+        dcc.Dropdown(id='plot2-quantity', multi=True, value="temp [°C]", placeholder="(mandatory) Select (multiple) y-Value(s)",persistence=True),
         html.Div([html.Label("Plot 1 Style: "), dcc.RadioItems(["line", "bar"], "line", id="plot1-style", style={"display" : "inline-block"})]),
         html.Div([html.Label("Plot 2 Style: "), dcc.RadioItems(["line", "bar"], "line", id="plot2-style", style={"display" : "inline-block"})]),
-        html.Div([html.Label("Plot 3 Style: "), dcc.RadioItems(["line", "bar"], "line", id="plot3-style", style={"display" : "inline-block"})]),
-        html.Div([html.Label("Plot 4 Style: "), dcc.RadioItems(["line", "bar"], "line", id="plot4-style", style={"display" : "inline-block"})]),
         ], style={'width': '300px'}),
 
     html.Div(children=[
@@ -87,6 +83,7 @@ app.layout = html.Div([
         ]),
         dcc.Loading(dcc.Graph(id='plot1')),
         dcc.Loading(dcc.Graph(id='plot2')),
+        dcc.Loading(dcc.Graph(id='plot3')),
         html.H2('Total emissions:'),
         html.Div(id='total-emissions'),
      ], style={'width': '100%'})
@@ -99,8 +96,6 @@ app.layout = html.Div([
     Output('total-emissions','children'),
     Output('plot1-quantity','options'),
     Output('plot2-quantity','options'),
-    Output('plot3-quantity','options'),
-    Output('plot4-quantity','options'),
 
     Input('zip-input', 'value'),
     Input('weather-date-picker-range', 'start_date'),
@@ -147,54 +142,53 @@ def update_dashboard(zip_code, start_date, end_date, building_type, building_yea
         html.Div(f"Heat Pump Power:         {hd.heat_pump_size(b_type=building_type, b_age=building_year, A=area)} kW")
     ])
 
-    return {"data-frame": df.reset_index().to_dict("records")}, fig2, df.columns.values, df.columns.values, df.columns.values, df.columns.values
+    return {"data-frame": df.reset_index().to_dict("records")}, fig2, df.columns.values, df.columns.values
 
 @app.callback(
     Output('plot1','figure'),
     Output('plot2','figure'),
+    Output('plot3','figure'),
 
     Input('data','data'),
     Input('plot1-quantity','value'),
     Input('plot2-quantity','value'),
-    Input('plot3-quantity','value'),
-    Input('plot4-quantity','value'),
     Input('plot1-style','value'),
     Input('plot2-style','value'),
-    Input('plot3-style','value'),
-    Input('plot4-style','value'),
     prevent_initial_call=True)
-def draw_plot(df_json, y1, y2, y3, y4, s1, s2, s3, s4):
+def draw_plot(df_json, y1, y2, s1, s2):
     df = pd.DataFrame(df_json["data-frame"]).set_index("index")
 
+    fig = px.line(df,y=y1) if s1 == 'line' else px.histogram(df, x=df.index, y=y1).update_traces(xbins_size="M1")
+    fig2 = px.line(df,y=y2) if s2 == 'line' else px.histogram(df, x=df.index, y=y2).update_traces(xbins_size="M1")
     # generate plots
-    fig = make_subplots(rows=2, cols=2, shared_xaxes=True).update_layout(height=900)
-    if s1 == 'line':
-        fig.add_trace(px.line(df,y=y1).data[0], row=1, col=1)
-    elif s1 == 'bar':
-        fig.add_trace(px.histogram(df, x=df.index, y=y1).update_traces(xbins_size="M1").data[0], row=1, col=1)
+    # fig = make_subplots(rows=2, cols=2, shared_xaxes=True).update_layout(height=900)
+    # if s1 == 'line':
+    #     fig.add_trace(px.line(df,y=y1).data[0], row=1, col=1)
+    # elif s1 == 'bar':
+    #     fig.add_trace(px.histogram(df, x=df.index, y=y1).update_traces(xbins_size="M1").data[0], row=1, col=1)
 
-    if s2 == 'line':
-        fig.add_trace(px.line(df,y=y2).data[0], row=1, col=2)
-    elif s2 == 'bar':
-        fig.add_trace(px.histogram(df, x=df.index, y=y2).update_traces(xbins_size="M1").data[0], row=1, col=2)
+    # if s2 == 'line':
+    #     fig.add_trace(px.line(df,y=y2).data[0], row=1, col=2)
+    # elif s2 == 'bar':
+    #     fig.add_trace(px.histogram(df, x=df.index, y=y2).update_traces(xbins_size="M1").data[0], row=1, col=2)
 
-    if s3 == 'line':
-        fig.add_trace(px.line(df,y=y3).data[0], row=2, col=1)
-    elif s3 == 'bar':
-        fig.add_trace(px.histogram(df, x=df.index, y=y3).update_traces(xbins_size="M1").data[0], row=2, col=1)
+    # if s3 == 'line':
+    #     fig.add_trace(px.line(df,y=y3).data[0], row=2, col=1)
+    # elif s3 == 'bar':
+    #     fig.add_trace(px.histogram(df, x=df.index, y=y3).update_traces(xbins_size="M1").data[0], row=2, col=1)
 
-    if s4 == 'line':
-        fig.add_trace(px.line(df,y=y4).data[0], row=2, col=2)
-    elif s4 == 'bar':
-        fig.add_trace(px.histogram(df, x=df.index, y=y4).update_traces(xbins_size="M1").data[0], row=2, col=2)
+    # if s4 == 'line':
+    #     fig.add_trace(px.line(df,y=y4).data[0], row=2, col=2)
+    # elif s4 == 'bar':
+    #     fig.add_trace(px.histogram(df, x=df.index, y=y4).update_traces(xbins_size="M1").data[0], row=2, col=2)
     
     # Add y axis labels
-    fig.update_yaxes(title_text=y1, row=1, col=1)
-    fig.update_yaxes(title_text=y2, row=1, col=2)
-    fig.update_yaxes(title_text=y3, row=2, col=1)
-    fig.update_yaxes(title_text=y4, row=2, col=2)
+    # fig.update_yaxes(title_text=y1, row=1, col=1)
+    # fig.update_yaxes(title_text=y2, row=1, col=2)
+    # fig.update_yaxes(title_text=y3, row=2, col=1)
+    # fig.update_yaxes(title_text=y4, row=2, col=2)
 
-    fig2 = px.line(df, y=['Oil heating emissions [kg CO2eq]',
+    fig3 = px.line(df, y=['Oil heating emissions [kg CO2eq]',
                           'Gas heating emissions [kg CO2eq]',
                           'heat pump emissions [kg CO2eq]'])
     
@@ -202,12 +196,12 @@ def draw_plot(df_json, y1, y2, y3, y4, s1, s2, s3, s4):
     marks = marks.loc[marks.diff() != 0]
     for i in range(len(marks)):
         if marks.iat[i] > 0:
-            fig2.add_vrect(x0=marks.index[i], x1=marks.index[i+1], fillcolor="red", opacity=0.25, layer="below", line_width=0)
+            fig3.add_vrect(x0=marks.index[i], x1=marks.index[i+1], fillcolor="red", opacity=0.25, layer="below", line_width=0)
 
-    return fig, fig2
+    return fig, fig2, fig3
 
 
-@memory.cache
+#@memory.cache
 def fetch_data(start_date,end_date,zip_code):
     if start_date and end_date and zip_code:
         start_date_object = datetime.fromisoformat(start_date)
@@ -217,4 +211,4 @@ def fetch_data(start_date,end_date,zip_code):
 
 # Run the app
 if __name__ == '__main__':
-    app.run_server(debug=True)
+    app.run_server(debug=False)

@@ -35,7 +35,7 @@ def simulate_np(P_el_appliances:np.ndarray, temp:np.ndarray,
   Q_dot_loss = np.zeros_like(temp)
   Q_dot_H = np.zeros_like(temp)
   Q_H = np.zeros_like(temp)
-  Q_H[0] = t_target
+  Q_H[0] = t_target*C # initial temperature
 
   for i in range(len(temp)-1):
       T_inside = Q_H[i]/C
