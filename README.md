@@ -46,3 +46,10 @@ specific heat demand:   http://www.bosy-online.de/heizlastberechnung_nach_din_en
 Heating limit temperature: https://www.effizienzhaus-online.de/lexikon/heizgrenztemperatur/
 
 
+3000 L Heizoel
+30000 kWh Waermebedarf pro Jahr
+
+Berater: 55000 kWh Waermebedarf
+
+
+Electricity stats for Germany: https://www.smard.de/en/downloadcenter/download-market-data/?downloadAttributes=%7B%22selectedCategory%22:1,%22selectedSubCategory%22:1,%22selectedRegion%22:false,%22selectedFileType%22:%22CSV%22,%22from%22:1514761200000,%22to%22:1672613999999%7D

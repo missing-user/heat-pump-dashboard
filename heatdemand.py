@@ -1,4 +1,5 @@
 import pandas as pd
+import numpy as np
 
 tab_heat_demand = pd.read_csv("data/heatingload/room_heating/spezifische Heizlast.csv",sep= ";" )
 
@@ -25,27 +26,41 @@ def get_heatpump_Q_dot(t_current, t_target, Q_dot_H_design):
       return Q_dot_H_design
    return 0.0
 
-def simulate(df, b_type, b_age, A, t_target=20.0):
-  Q_dot_H_design = heat_pump_size(b_type, b_age, A)
-  
-  UA = 582e-3   # kW/K
-  C = 328000    # kJ/K
+
+def simulate_np(P_el_appliances:np.ndarray, temp:np.ndarray, 
+                Q_dot_H_design:float, t_target:float, 
+                UA:float, C:float):
   timestep = 3600 # h
 
-  df["Q_H [kJ]"] = t_target * C # 15°C to kJ
-  df["Q_dot_loss [kW]"] = 0.0
-  df["Q_dot_H [kW]"] = 0.0
-  for i in range(len(df)-1):
-      T_inside = df["Q_H [kJ]"].iloc[i]/C
-      T_outside = df["temp [°C]"].iloc[i]
-      df["Q_dot_loss [kW]"].iloc[i] = Q_dot = (T_outside - T_inside)*UA # kW
-      #Q_dot += 100 # 100W heating for each habitant
-      Q_dot += df["P_el appliances [W]"].iloc[i]*1e-3 # appliances
+  Q_dot_loss = np.zeros_like(temp)
+  Q_dot_H = np.zeros_like(temp)
+  Q_H = np.zeros_like(temp)
+  Q_H[0] = t_target
 
-      df["Q_dot_H [kW]"].iloc[i] = get_heatpump_Q_dot(T_inside, t_target, max(0,min(-Q_dot, Q_dot_H_design)))
-      Q_dot += df["Q_dot_H [kW]"].iloc[i] # heat pump
+  for i in range(len(temp)-1):
+      T_inside = Q_H[i]/C
+      T_outside = temp[i]
+      Q_dot = Q_dot_loss[i] = (T_outside - T_inside)*UA
+      Q_dot += P_el_appliances[i]*1e-3 # appliances
+      Q_dot_H[i] = get_heatpump_Q_dot(T_inside, t_target, max(0,min(-Q_dot, Q_dot_H_design)))
 
-      df["Q_H [kJ]"].iloc[i+1] = df["Q_H [kJ]"].iloc[i] + Q_dot*timestep
+      Q_dot += Q_dot_H[i] # heat pump
+      Q_H[i+1] = Q_H[i] + Q_dot*timestep
+  return Q_H, Q_dot_loss, Q_dot_H
+
+def simulate(df, b_type, b_age, A, t_target=20.0):
+  Q_dot_H_design = heat_pump_size(b_type, b_age, A)
+
+  UA = 582e-3   # kW/K
+  C = 328000    # kJ/K
+
+  Q_H, Q_dot_loss, Q_dot_H = simulate_np(df["P_el appliances [W]"].to_numpy(), 
+                                         df["temp [°C]"].to_numpy(), 
+                                         Q_dot_H_design, t_target, UA, C)
+  df["Q_H [kJ]"] = Q_H
+  df["Q_dot_loss [kW]"] = Q_dot_loss
+  df["Q_dot_H [kW]"] = Q_dot_H
+
 
   df["T_house [°C]"] = df["Q_H [kJ]"]/C # kJ to °C
   return df
