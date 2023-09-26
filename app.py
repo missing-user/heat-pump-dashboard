@@ -69,6 +69,7 @@ app.layout = html.Div([
             value='Carnot',persistence=True
         ),
         html.Div(id='selected-heat-pump-model'),
+        dcc.Dropdown(id="model-considerations", multi=True, value=[], persistence=True, options=["Close window blinds in summer", "Ventilation heat losses"]),
         dcc.Store(id='data'),
         html.Br(),
         dcc.Dropdown(id='plot1-quantity', multi=True, value="T_outside [°C]", placeholder="(mandatory) Select (multiple) y-Value(s)",persistence=True),
@@ -110,15 +111,20 @@ app.layout = html.Div([
     Input("vorlauftemp-slider", "value"),
     Input("target-temp-slider", "value"),
     Input('heatpump-model','value'),
+    Input("model-considerations", "value")
     )
-def update_dashboard(zip_code, start_date, end_date, building_type, building_year, family_type, area, window_area, vorlauf_temp, temperature_target, model):
+def update_dashboard(zip_code, start_date, end_date, building_type, 
+                     building_year, family_type, area, window_area, 
+                     vorlauf_temp, temperature_target, model, considerations):
     # fetch data
     df = fetch_data(start_date,end_date,zip_code)
     df = el.load_el_profile(df, family_type)
     # compute P and electrical Power
     df = heatings.compute_cop(df,model,vorlauf_temp)
     df = hd.simulate(df, b_type=building_type, b_age=building_year, 
-                     A_windows=window_area, A=area, t_target=temperature_target)
+                     A_windows=window_area, A=area, 
+                     t_target=temperature_target,
+                     considerations=considerations)
     df = heatings.compute_P_electrical(df)
     df = heatings.gas_heating(df)
     df = heatings.oil_heating(df)

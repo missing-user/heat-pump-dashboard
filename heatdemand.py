@@ -4,6 +4,7 @@ import numpy as np
 tab_heat_demand = pd.read_csv("data/heatingload/room_heating/spezifische Heizlast.csv",sep= ";" )
 uwerte = pd.read_csv("data/heatingload/room_heating/Uwerte.csv").set_index("Gebaeude Alter")
 gwerte = pd.read_csv("data/heatingload/room_heating/Gwerte.csv").set_index("Gebaeude Alter")
+cwerte = pd.read_csv("data/heatingload/room_heating/Cwerte.csv").set_index("Gebaeude Alter")
 
 def heat_pump_size(b_type, b_age, A):
   q_dot_H_design = tab_heat_demand.loc[tab_heat_demand["building_type"]== b_type, b_age].iloc[0] * 1e-3 #W to kW
@@ -48,8 +49,6 @@ def simulate_np(P_internal:np.ndarray, T_outside_series:np.ndarray,
       Q_dot = Q_dot_loss[i] = (T_outside - T_inside)*UA
       
       Q_dot_ventilation[i] = (T_outside - T_inside)*ventilation[i]
-      if T_inside > t_target:
-        Q_dot_ventilation[i] *= 3.0 # increase ventilation if inside is too hot
       Q_dot += Q_dot_ventilation[i] # ventilation (already has a negative sign)
       
       Q_dot += P_internal[i] # appliances
@@ -64,29 +63,34 @@ def ventilation(b_type, volume):
   c_spec_air = 1.006 # kJ/kgK
   air_density = 1.2 # kg/m3
   c_air = c_spec_air * air_density # kJ/m3K
-  return 0.35 * volume * c_air / 3600.0 # kJ/sK
 
-def simulate(df, b_type, b_age, A, A_windows, t_target=20.0):
+  return 0.5 * volume * c_air / 3600.0 # kJ/sK
+
+def simulate(df, b_type, b_age, A, A_windows, t_target=20.0, considerations=[]):
   Q_dot_H_design = heat_pump_size(b_type, b_age, A)
   U = uwerte.loc[b_age, "U-Wert [W/m2K]"]*1e-3
+  specific_heat_capa = cwerte.loc[b_age, "Heatcapacity [kJ/m2K]"]
 
-  air_volume  = A*3.0 # m3
-  specific_heat_capa = 546.66 # Ullis Wert kJ/m3K
-  C = air_volume*specific_heat_capa    # kJ/K
+  volume = A * 3.0 # m3
+  #specific_heat_capa = 546.66 # Ullis Wert kJ/m3K
+  C = volume*specific_heat_capa    # kJ/K
 
   # Heat transfer coefficient through walls etc.
   UA = A*U # UA = 582e-3   # kW/K
-  # Subtract the ventilation losses
-  ventilation_series = np.full_like(df["T_outside [°C]"], ventilation(b_type, air_volume))
-  #ventilation_series = np.random.weibull(1, len(df["T_outside [°C]"])) * ventilation(b_type, air_volume)
-  #ventilation_series = np.zeros_like(df["T_outside [°C]"])
+  
+  if "Ventilation heat losses" in considerations:
+    ventilation_series = np.full_like(df["T_outside [°C]"], ventilation(b_type, volume))
+  else:
+    ventilation_series = np.zeros_like(df["T_outside [°C]"])
 
   df["P_solar [kW]"] = float(A_windows)/4 *(df["p_solar south [kW/m2]"]+df["p_solar east [kW/m2]"]+df["p_solar west [kW/m2]"])
-  df["P_solar [kW]"] *= gwerte.loc[b_age, "G-Wert [-]"] # Less heat passes through newer windows
+  df["Q_dot_solar [kW]"] = df["P_solar [kW]"] * gwerte.loc[b_age, "G-Wert [-]"] # Less heat passes through newer windows
+  
   # Simulate closing the blinds when it is hot outside
-  df.loc[df["T_outside [°C]"] > 22.0,"P_solar [kW]"] *= 0.1
+  if "Close window blinds in summer" in considerations:
+    df.loc[df["T_outside [°C]"] > t_target,"Q_dot_solar [kW]"] *= 0.1
 
-  P_internal = (df["P_el appliances [kW]"] + df["P_solar [kW]"]).to_numpy()
+  P_internal = (df["P_el appliances [kW]"] + df["Q_dot_solar [kW]"]).to_numpy()
 
   Q_H, Q_dot_loss, Q_dot_vent, Q_dot_H = simulate_np(P_internal, 
                                          df["T_outside [°C]"].to_numpy(),
