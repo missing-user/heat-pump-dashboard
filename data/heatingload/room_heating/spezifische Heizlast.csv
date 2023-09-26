@@ -5,4 +5,3 @@ tarreced_house [W/m2];140;130;120;100;85;65;50;;;;
 appartment_building  < 8 AP [W/m2];130;120;110;75;65;60;45;41;42;33;25
 appartment_building > 8 AP [W/m2];120;110;100;70;60;55;40;;;;
 Heizgrenztemperatur [°C];17;17;17;16;16;15;14;13;12;11;9
-Heatcapacity [J/m2K];180000;324000;468000;;;;;;;;

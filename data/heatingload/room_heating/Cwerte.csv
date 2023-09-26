@@ -1,4 +1,12 @@
-Gebaude,Heatcapacity [kJ/m2K]
-,180
-,324
-,468
+Gebaeude Alter,Heatcapacity [kJ/m2K]
+passive house,324
+KfW 40,342
+KfW 85,342
+after 2002,342
+1995-2001,400
+1984-94,468
+1978-83,468
+1974-77,468
+1969-73,468
+1959-68,468
+until 1958,468
