@@ -1,0 +1,26 @@
+body{
+  margin: 1rem;
+}
+
+.main-container{
+  display: grid;
+  grid-template-columns: 1fr;
+  grid-gap: 1rem;
+}
+
+.input-container{
+  display: grid;
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 900px) {
+  .input-container{
+    grid-template-columns: 1fr 3fr;
+  }
+}
+
+@media (min-width: 1200px) {
+  .main-container{
+    grid-template-columns: 50rem 1fr;
+  }
+}

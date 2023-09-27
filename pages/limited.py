@@ -26,11 +26,10 @@ layout = html.Div([
     ]),
 
   dash_dangerously_set_inner_html.DangerouslySetInnerHTML('''
-      <style>.advanced {
+<style>.advanced {
   visibility: collapse;
   display: none !important;
-}</style>
-  '''),
+}</style>'''),
 ])
 
 @callback(

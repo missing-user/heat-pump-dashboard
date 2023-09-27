@@ -21,7 +21,8 @@ app.layout = html.Div([
     dcc.Store('data'),
 
     # Inputs
-    html.Div(children=[
+    html.Div([
+        html.Div([
         html.Label("Zip Code (for weather data)"),
         dcc.Input(id="zip-input", type="number", value=80333, placeholder="Enter a Zip Code", debounce=True, persistence=False),
         html.Label('Date range for simulation'),
@@ -79,10 +80,12 @@ app.layout = html.Div([
             html.Div([html.Label("Plot 1 Style: "), dcc.RadioItems(["line", "bar"], "line", id="plot1-style")]),
             dcc.Dropdown(id='plot2-quantity', multi=True, value="T_outside [°C]", placeholder="(mandatory) Select (multiple) y-Value(s)",persistence=False),
             html.Div([html.Label("Plot 2 Style: "), dcc.RadioItems(["line", "bar"], "line", id="plot2-style")]),
-        ], className="advanced")
-        ], style={'width': '300px'}),
+        ], className="advanced"),
+        ], className="input-container"),
 
-    dash.page_container   
+        dash.page_container   
+        ], className="main-container"),
+
 ])
 
 @app.callback(
@@ -117,7 +120,8 @@ def update_dashboard(df_json,
                      building_year, family_type, area, window_area, 
                      vorlauf_temp, temperature_target, model, 
                      assumptions):
-    print(start_date, end_date)
+    if model is None:
+        model = "Carnot"
     
     # If initial call, check for existence of a data-frame
     print("triggered", dash.ctx.triggered_id)
