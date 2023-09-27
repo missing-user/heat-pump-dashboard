@@ -15,6 +15,7 @@ def cop_carnot(df, t_vl, degradation_coeff=.5):
 def compute_P_electrical(df):
     df.loc[:, 'P_el heat pump [kW]'] = df.loc[:, 'Q_dot_H [kW]'] / df.loc[:, 'COP heatpump']
     df.loc[df['Q_dot_H [kW]'] == 0, 'COP heatpump'] = np.nan
+    df["heat pump emissions [kg CO2eq]"] = df["P_el heat pump [kW]"] * df["Intensity [g CO2eq/kWh]"] * 1e-3
     return df
 
 def gas_heating(df):

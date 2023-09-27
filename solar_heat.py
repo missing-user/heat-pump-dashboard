@@ -64,10 +64,10 @@ def fetch_all(lat, lon, start: datetime, end: datetime) -> pd.Series:
                 el_year = data["time"].dt.year.min()
                 data["time"] -= pd.Timedelta(days=(el_year - year)*365)
 
-                data_slice = data[(data['time'] >= start) & (data['time'] <= end)]
-                data_slice[f"p_solar {direction} [kW/m2]"] = 1e-3 * data_slice["G(i)"] * 0.9 * 0.6 * 0.9 # Reduction factors from larissas presentation (except window type)
+                slice = (data['time'] >= start) & (data['time'] <= end)
+                data.loc[slice,f"p_solar {direction} [kW/m2]"] = 1e-3 * data.loc[slice,"G(i)"] * 0.9 * 0.6 * 0.9 # Reduction factors from larissas presentation (except window type)
                 # Convert W/m2 to kW/m2
-                df.update(data_slice.set_index("time"))
+                df.update(data[slice].set_index("time"))
         else:
             # Handle the case when the request fails
             print(f"Failed to retrieve data. Status code: {response.status_code} {response.reason}")
