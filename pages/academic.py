@@ -7,14 +7,12 @@ dash.register_page(__name__)
 
 # Define the layout of the app
 layout = html.Div([
-    html.Div([
         html.H2('Total emissions:'),
         dcc.Loading(html.Div(id='total-emissions')),
         dcc.Loading(dcc.Graph(id='plot1')),
         dcc.Loading(dcc.Graph(id='plot2')),
         dcc.Loading(dcc.Graph(id='plot3')),
-     ], style={'width': '100%'})
-], style = {'display':'flex'})
+     ])
 
 @callback(
     Output('total-emissions','children'),    
@@ -40,7 +38,7 @@ def show_summaries(df_json):
         html.Div(f"Total CO2 emissions (oil heating):   {total_emission_oil:.1f} kg CO2eq"),
         html.Div(f"Total CO2 emissions (gas heating):   {total_emission_gas:.1f} kg CO2eq"),
         html.Div(f"Seasonal performance factor:         {spf:.1f}"),
-        html.Div(f"Heat Pump Power:         {df_json['heat-pump-power']:.1f} kW")
+        html.Div(f"Suggested heat pump power:         {df_json['heat-pump-power']:.1f} kW")
     ])
 
     return fig2
@@ -52,9 +50,15 @@ def show_summaries(df_json):
     Input('plot1-quantity','value'),
     Input('plot1-style','value'),
     prevent_initial_call=True)
-def draw_plot(df_json, y1, s1):
+def draw_plot(df_json, y, s):
+    
     df = pd.DataFrame(df_json["data-frame"]["data"], df_json["data-frame"]["index"], df_json["data-frame"]["columns"]).set_index("index")
-    fig = px.line(df,y=y1) if s1 == 'line' else px.histogram(df, x=df.index, y=y1).update_traces(xbins_size="M1")
+    if s == 'line':
+        fig = px.line(df, y=y)
+    elif s == 'bar':
+        fig = px.histogram(df, x=df.index, y=y).update_traces(xbins_size="M1")
+    else:
+        fig = px.area(df, y=y)
     return fig
 
 
@@ -65,11 +69,16 @@ def draw_plot(df_json, y1, s1):
     Input('plot2-quantity', 'value'),
     Input('plot2-style', 'value'),
     prevent_initial_call=True)
-def draw_plot2(df_json, y2, s2):
+def draw_plot2(df_json, y, s):
     df = pd.DataFrame(df_json["data-frame"]["data"], df_json["data-frame"]["index"],
                       df_json["data-frame"]["columns"]).set_index("index")
-    fig2 = px.line(df, y=y2) if s2 == 'line' else px.histogram(df, x=df.index, y=y2).update_traces(xbins_size="M1")
-    return fig2
+    if s == 'line':
+        fig = px.line(df, y=y)
+    elif s == 'bar':
+        fig = px.histogram(df, x=df.index, y=y).update_traces(xbins_size="M1")
+    else:
+        fig = px.area(df, y=y)
+    return fig
 
 
 @callback(

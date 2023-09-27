@@ -50,6 +50,15 @@ def oil_heating(df):
     df.loc[:, 'Oil heating emissions [kg CO2eq]'] = df.loc[:,'Q_dot_required [kW]'] / eta * intensity * 1e-3
     return df
 
+def pellet_heating(df):
+    # constants for oil heating
+    intensity = 36 # [g CO2/kWh] primary energy
+    eta = .95
+
+    # compute power demand and emissions
+    df.loc[:, 'Pellet heating emissions [kg CO2eq]'] = df.loc[:,'Q_dot_required [kW]'] / eta * intensity * 1e-3
+    return df
+
 def simulate_hp_inverse(df, model='Bosch Compress 3000 AWS-8 B'):
     # Create heat pump object with parameters
     parameters = hpl.get_parameters(model=model)

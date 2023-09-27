@@ -1,4 +1,4 @@
-function generate_popup(title, text, delay, elementtype="newsletter"){
+function generate_popup(title, text, delay, elementtype="newsletter", callback=undefined){
   setTimeout(()=>{
     // Create a popup element
     const popup = document.createElement('div')
@@ -14,14 +14,16 @@ function generate_popup(title, text, delay, elementtype="newsletter"){
     `
     // Add event listener to close button
     popup.querySelector('.popup__close').addEventListener('click', ()=>{
-      popup.remove()
+      if(callback)
+        callback()
+      popup.remove();
     })
     document.body.append(popup)
   
   }, delay)
 }
 
-function generate_image_popup(imagepath, delay){
+function generate_image_popup(imagepath, delay, closefake=true){
   setTimeout(()=>{
     // Create a popup element
     const popup = document.createElement('div')
@@ -35,20 +37,32 @@ function generate_image_popup(imagepath, delay){
     <img src="assets/`+imagepath+`" class="popup__image">
     `
     // Add event listener to close button
-    popup.querySelector('.imgpopup__close').addEventListener('click', ()=>{
+    closebtn = popup.querySelector('.imgpopup__close')
+    closebtn.addEventListener('click', ()=>{
       popup.remove()
     })
+
+    if(closefake){
+      closebtn.addEventListener('mouseover', ()=>{
+        closebtn.disabled = true
+        closebtn.style.right = "80%"
+        setTimeout(()=>{closebtn.disabled = false;}, 300)
+      })
+    }
     document.body.append(popup)
   
   }, delay)
 }
 
-if(location.href.includes("limited")){
-  generate_popup('Psst - Here\'s some cookies...', 'Please accept our innocent little tracking cookies, they\'re nice and yummy', 1300, "cookies")
+function have_some_fun() {
+  generate_popup('Would you like to learn more about heat pumps?', 'Sign up for our newsletter to stay up to date with the latest news!', 6000)
+  generate_popup("A message from our sponsors", "Come to Sarntaal!", 3000, "ads")
+  generate_image_popup("inzidenz.png", 100)
 
-  document.onclick = function(e){
-    generate_popup('Would you like to learn more about heat pumps?', 'Sign up for our newsletter to stay up to date with the latest news!', 6000)
-    generate_popup("A message from our sponsors", "Come to Sarntaal!", 3000, "ads")
-    generate_image_popup("inzidenz.png", 100)
-  }
+}
+
+if(location.href.includes("limited")){
+  generate_popup('Psst - Here\'s some cookies...', 'Please accept our innocent little tracking cookies, they\'re nice and yummy', 1300, "cookies", have_some_fun)
+
+
 }

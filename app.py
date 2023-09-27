@@ -25,68 +25,68 @@ app.layout = html.Div([
     html.Div([
         html.Div([html.Div([
         html.Label("Zip Code"),
-        dcc.Input(id="zip-input", type="number", value=80333, placeholder="Enter a Zip Code", debounce=True, persistence=False),
+        dcc.Input(id="zip-input", type="number", value=80333, placeholder="Enter a Zip Code", debounce=True, persistence=True),
         html.Label('Simulation year'),
-        dcc.Dropdown(id="year-input", options=list(range(2010, datetime.now().year)), value=2021, persistence=False),
+        dcc.Dropdown(id="year-input", options=list(range(2010, datetime.now().year)), value=2021, persistence=True),
         html.Label('Date range for simulation', className="advanced"),
         dcc.DatePickerRange(
             id='weather-date-picker-range',
             # TODO: check allowed date range
             min_date_allowed=date(2010, 1, 1),
             max_date_allowed=date(2022, 12, 31),
-            persistence=False,
+            persistence=True,
             className="advanced"
         ),
         html.Label('Building type'),
         dcc.Dropdown(
             id='building-dropdown',
             options=hd.tab_heat_demand["building_type"],
-            value=hd.tab_heat_demand.iloc[0,0], persistence=False
+            value=hd.tab_heat_demand.iloc[0,0], persistence=True
         ),
         html.Label("Building year"),
         dcc.Dropdown(
             id='building-year-dropdown',
             options=hd.tab_heat_demand.columns[1:],
-            value=hd.tab_heat_demand.columns[1], persistence=False
+            value=hd.tab_heat_demand.columns[1], persistence=True
         ),
         html.Label("Residents"),
         dcc.Dropdown(id="family-type-dropdown",
                      options=[{"label":l.replace(".dat", ""),"value": v}for l,v in zip(el.list_readable_electricity_profiles(), el.list_electricity_profiles())],
-                     value=el.list_electricity_profiles()[0],persistence=False),
+                     value=el.list_electricity_profiles()[0],persistence=True),
 
         html.Label("Living area"),
-        dcc.Input(id='area', min=1,value=120,type='number', placeholder="Enter area", debounce=True, persistence=False),
+        dcc.Input(id='area', min=1,value=120,type='number', placeholder="Enter area", persistence=True),
         html.Label("Floor count"),
-        dcc.Input(2,id='floor', min=1,type='number', placeholder="Enter number of floors", debounce=True, persistence=False),
+        dcc.Input(2,id='floor', min=1,type='number', placeholder="Enter number of floors", persistence=True),
 
         html.Label("Window area (m²)",className="advanced"),        
-        dcc.Input(id="window-area", min=0,value=20,type='number', placeholder="Enter window area", debounce=True, persistence=False,className="advanced"),
+        dcc.Input(id="window-area", min=0,value=20,type='number', placeholder="Enter window area", debounce=True, persistence=True,className="advanced"),
 
         html.Label("Target temperature (°C)",className="advanced"),
-        dcc.Slider(id="target-temp-slider", min=15, max=25, value=20, persistence=False,className="advanced"),
+        dcc.Slider(id="target-temp-slider", min=15, max=25, value=20, persistence=True,className="advanced"),
         
         html.Label('Heat pump model',className="advanced"),
-        dcc.Dropdown(id='heatpump-model', value='Carnot',persistence=False,className="advanced"),
+        dcc.Dropdown(id='heatpump-model', value='Carnot',persistence=True,className="advanced"),
 
         html.Label("Model assumptions",className="advanced"),
-        dcc.Dropdown(id="model-assumptions", multi=True, value=[], persistence=False, 
+        dcc.Dropdown(id="model-assumptions", multi=True, value=[], persistence=True, 
                      options=["Close window blinds in summer", 
                             "Ventilation heat losses", 
-                            "Time dependent electricity mix"],className="advanced"),
+                            "Time dependent electricity mix",
+                            "CO2 aware controller"],className="advanced"),
 
         html.Label("Plot 1 Quantities",className="advanced"), 
-        dcc.Dropdown(id='plot1-quantity', multi=True, value="T_outside [°C]", placeholder="(mandatory) Select (multiple) y-Value(s)",persistence=False,className="advanced"),
+        dcc.Dropdown(id='plot1-quantity', multi=True, value="T_outside [°C]", placeholder="(mandatory) Select (multiple) y-Value(s)",persistence=True,className="advanced"),
         html.Label("Plot 1 Style",className="advanced"), 
-        dcc.RadioItems(["line", "bar"], "line", id="plot1-style",className="advanced"),
+        dcc.RadioItems(["line", "bar", "area"], "line", id="plot1-style",persistence=True,className="advanced"),
         html.Label("Plot 2 Quantities",className="advanced"), 
-        dcc.Dropdown(id='plot2-quantity', multi=True, value="T_outside [°C]", placeholder="(mandatory) Select (multiple) y-Value(s)",persistence=False,className="advanced"),
+        dcc.Dropdown(id='plot2-quantity', multi=True, value="T_outside [°C]", placeholder="(mandatory) Select (multiple) y-Value(s)",persistence=True,className="advanced"),
         html.Label("Plot 2 Style",className="advanced"), 
-        dcc.RadioItems(["line", "bar"], "line", id="plot2-style", className="advanced"),
+        dcc.RadioItems(["line", "bar", "area"], "line", id="plot2-style", persistence=True,className="advanced"),
         ], className="input-container"),]),
 
         dash.page_container   
-        ], className="main-container"),
-
+    ], className="main-container"),
 ])
 
 @app.callback(
@@ -154,9 +154,17 @@ def update_dashboard(df_json,
                      assumptions=assumptions)
     df = heatings.gas_heating(df)
     df = heatings.oil_heating(df)
+    df = heatings.pellet_heating(df)
+
+    requested_hp_power = hd.heat_pump_size(b_type=building_type, b_age=building_year, A=area)
+
+    hp_options = hp_lib_df.loc[(hp_lib_df["Rated Power low T [kW]"] > requested_hp_power*0.8) &
+                  (hp_lib_df["Rated Power low T [kW]"] > requested_hp_power*1.1), 'Titel'].values
 
     return {"data-frame": df.reset_index().to_dict("split"),
-            "heat-pump-power": hd.heat_pump_size(b_type=building_type, b_age=building_year, A=area)}, df.columns.values, df.columns.values, hp_lib_df['Titel'].values
+            "heat-pump-power": requested_hp_power,
+            "area":area,
+            }, df.columns.values, df.columns.values, hp_options
 
 
 if __name__ == '__main__':
