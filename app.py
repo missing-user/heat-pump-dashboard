@@ -124,6 +124,7 @@ def update_dashboard(df_json,
                       temperature_target, model,
                      assumptions):
     hp_lib_df = pd.read_csv(hpl.cwd() + r'/data/hplib_database.csv', delimiter=',')
+    hp_lib_df = hp_lib_df.loc[hp_lib_df['Type'] == 'Outdoor Air/Water', :]
     if model is None:
         model = "Carnot"
 
