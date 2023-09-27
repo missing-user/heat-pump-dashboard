@@ -67,6 +67,24 @@ body{
   justify-content: space-around;
 }
 
+.plot-container svg{
+  background: none !important;
+}
+
+.DateInput_input, .dash-input, .Select-menu-outer, .has-value.Select--single > .Select-control .Select-value .Select-value-label{
+  color: var(--text-color-normal);
+}
+
+.Select-control, .DateRangePickerInput, .DateInput, .Select-menu-outer{
+  background-color: var(--background-color);
+  border-color: var(--border-color);
+}
+
+.is-open>.Select-control{
+  background-color: var(--background-color-softer);
+  border-color: var(--border-color-softer);
+}
+
 @media (min-width: 900px) {
   .input-container{
     grid-template-columns: 1fr 2fr;
