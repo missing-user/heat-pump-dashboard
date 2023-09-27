@@ -23,12 +23,12 @@ app.layout = html.Div([
 
     # Inputs
     html.Div([
-        html.Div([
-        html.Label("Zip Code (for weather data)"),
+        html.Div([html.Div([
+        html.Label("Zip Code"),
         dcc.Input(id="zip-input", type="number", value=80333, placeholder="Enter a Zip Code", debounce=True, persistence=False),
-        html.Label('Year for simulation'),
+        html.Label('Simulation year'),
         dcc.Dropdown(id="year-input", options=list(range(2010, datetime.now().year)), value=2021, persistence=False),
-        html.Label('Date range for simulation'),
+        html.Label('Date range for simulation', className="advanced"),
         dcc.DatePickerRange(
             id='weather-date-picker-range',
             # TODO: check allowed date range
@@ -37,7 +37,7 @@ app.layout = html.Div([
             persistence=False,
             className="advanced"
         ),
-        html.Label('Select building type'),
+        html.Label('Building type'),
         dcc.Dropdown(
             id='building-dropdown',
             options=hd.tab_heat_demand["building_type"],
@@ -49,7 +49,7 @@ app.layout = html.Div([
             options=hd.tab_heat_demand.columns[1:],
             value=hd.tab_heat_demand.columns[3], persistence=False
         ),
-        html.Label("Type of residents"),
+        html.Label("Residents"),
         dcc.Dropdown(id="family-type-dropdown",
                      options=[{"label":l.replace(".dat", ""),"value": v}for l,v in zip(el.list_readable_electricity_profiles(), el.list_electricity_profiles())],
                      value=el.list_electricity_profiles()[0],persistence=False),
@@ -65,12 +65,9 @@ app.layout = html.Div([
         html.Label("Target temperature (°C)",className="advanced"),
         dcc.Slider(id="target-temp-slider", min=15, max=25, value=20, persistence=False,className="advanced"),
         
-        html.Label('Select model for heat pump',className="advanced"),
+        html.Label('Heat pump model',className="advanced"),
         dcc.Dropdown(id='heatpump-model', value='Carnot',persistence=False,className="advanced"),
 
-        html.Label("Floor count",className="advanced"),
-        dcc.Input(2, min=1,type='number', placeholder="Enter number of floors", debounce=True, persistence=False,className="advanced"),
-        
         html.Label("Model assumptions",className="advanced"),
         dcc.Dropdown(id="model-assumptions", multi=True, value=[], persistence=False, 
                      options=["Close window blinds in summer", 
@@ -85,7 +82,7 @@ app.layout = html.Div([
         dcc.Dropdown(id='plot2-quantity', multi=True, value="T_outside [°C]", placeholder="(mandatory) Select (multiple) y-Value(s)",persistence=False,className="advanced"),
         html.Label("Plot 2 Style",className="advanced"), 
         dcc.RadioItems(["line", "bar"], "line", id="plot2-style", className="advanced"),
-        ], className="input-container"),
+        ], className="input-container"),]),
 
         dash.page_container   
         ], className="main-container"),
