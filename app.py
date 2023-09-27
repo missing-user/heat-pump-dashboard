@@ -1,9 +1,5 @@
 import dash
-from dash import Dash, dcc, html, Input, Output, callback
-import plotly.express as px
-import plotly.graph_objects as go
-import plotly.io as pio
-from plotly.subplots import make_subplots
+from dash import dcc, html, Input, Output, callback
 import pandas as pd
 import heatings
 import electricity as el
@@ -11,18 +7,20 @@ import heatdemand as hd
 
 import datasource
 from datetime import datetime, date
-import numpy as np
 
-from joblib import Memory
-memory = Memory("cache", verbose=0)
-
+import plotly.io as pio
 pio.templates.default = "plotly_white"
 
 # Initialize the Dash app
-app = dash.Dash(__name__)
+app = dash.Dash(__name__, use_pages=True)
 
 # Define the layout of the app
 app.layout = html.Div([
+    html.A("Free",href="./limited"),
+    html.A("Premium",href="./academic"),
+    dcc.Store('data'),
+
+    # Inputs
     html.Div(children=[
         html.Label('Enter location for weather data:'),
         html.Label("Zip Code"),
@@ -69,34 +67,23 @@ app.layout = html.Div([
             value='Carnot',persistence=True
         ),
         html.Div(id='selected-heat-pump-model'),
-        dcc.Dropdown(id="model-considerations", multi=True, value=[], persistence=True, options=["Close window blinds in summer", "Ventilation heat losses"]),
-        dcc.Store(id='data'),
+        dcc.Dropdown(id="model-assumptions", multi=True, value=[], persistence=True, 
+                     options=["Close window blinds in summer", 
+                            "Ventilation heat losses", 
+                            "Time dependent electricity mix"]),
         html.Br(),
         dcc.Dropdown(id='plot1-quantity', multi=True, value="T_outside [°C]", placeholder="(mandatory) Select (multiple) y-Value(s)",persistence=True),
+        html.Div([html.Label("Plot 1 Style: "), dcc.RadioItems(["line", "bar"], "line", id="plot1-style")]),
         dcc.Dropdown(id='plot2-quantity', multi=True, value="T_outside [°C]", placeholder="(mandatory) Select (multiple) y-Value(s)",persistence=True),
-        html.Div([html.Label("Plot 1 Style: "), dcc.RadioItems(["line", "bar"], "line", id="plot1-style", style={"display" : "inline-block"})]),
-        html.Div([html.Label("Plot 2 Style: "), dcc.RadioItems(["line", "bar"], "line", id="plot2-style", style={"display" : "inline-block"})]),
+        html.Div([html.Label("Plot 2 Style: "), dcc.RadioItems(["line", "bar"], "line", id="plot2-style")]),
         ], style={'width': '300px'}),
 
-    html.Div(children=[
-        html.Div(children=[
-            html.Div(children=[
-
-            ], style={'display':'inline-block', 'width':'40%'}),
-        ]),
-        dcc.Loading(dcc.Graph(id='plot1')),
-        dcc.Loading(dcc.Graph(id='plot2')),
-        dcc.Loading(dcc.Graph(id='plot3')),
-        html.H2('Total emissions:'),
-        html.Div(id='total-emissions'),
-     ], style={'width': '100%'})
-], style = {'display':'flex'})
+    dash.page_container   
+])
 
 
-
-@callback(
+@app.callback(
     Output('data','data'),
-    Output('total-emissions','children'),
     Output('plot1-quantity','options'),
     Output('plot2-quantity','options'),
 
@@ -111,86 +98,32 @@ app.layout = html.Div([
     Input("vorlauftemp-slider", "value"),
     Input("target-temp-slider", "value"),
     Input('heatpump-model','value'),
-    Input("model-considerations", "value")
+    Input("model-assumptions", "value"),
+    prevent_initial_call='initial_duplicate'
     )
 def update_dashboard(zip_code, start_date, end_date, building_type, 
                      building_year, family_type, area, window_area, 
-                     vorlauf_temp, temperature_target, model, considerations):
+                     vorlauf_temp, temperature_target, model, 
+                     assumptions):
     # fetch data
-    df = fetch_data(start_date,end_date,zip_code)
+    df = datasource.fetch_all("DE", zip_code, start_date,end_date)
+    if not "Time dependent electricity mix" in assumptions:
+        df["Intensity [g CO2eq/kWh]"] = df["Intensity [g CO2eq/kWh]"].mean()
+
     df = el.load_el_profile(df, family_type)
     # compute P and electrical Power
     df = heatings.compute_cop(df,model,vorlauf_temp)
     df = hd.simulate(df, b_type=building_type, b_age=building_year, 
                      A_windows=window_area, A=area, 
                      t_target=temperature_target,
-                     considerations=considerations)
+                     assumptions=assumptions)
     df = heatings.compute_P_electrical(df)
     df = heatings.gas_heating(df)
     df = heatings.oil_heating(df)
 
-    # compute total quantities
-    df["heat pump emissions [kg CO2eq]"] = df["P_el heat pump [kW]"] * df["Intensity [g CO2eq/kWh]"] * 1e-3
-    total_emission_hp = df["heat pump emissions [kg CO2eq]"].sum()
-    total_emission_gas = df["Gas heating emissions [kg CO2eq]"].sum()
-    total_emission_oil = df["Oil heating emissions [kg CO2eq]"].sum()
-    total_heat = df['Q_dot_H [kW]'].sum()
-    total_electrical_energy_hp = df['P_el heat pump [kW]'].sum()
-    spf = total_heat/total_electrical_energy_hp
-
-    # display total quantities
-    fig2 = html.Div(children=[
-        html.Div(f"Total heat demand:                   {total_heat:.1f} kWh"),
-        html.Div(f"Total electrical energy (heat pump): {total_electrical_energy_hp:.1f} kWh"),
-        html.Div(f"Total CO2 emissions (heat pump):     {total_emission_hp:.1f} kg CO2eq"),
-        html.Div(f"Total CO2 emissions (oil heating):   {total_emission_oil:.1f} kg CO2eq"),
-        html.Div(f"Total CO2 emissions (gas heating):   {total_emission_gas:.1f} kg CO2eq"),
-        html.Div(f"SPF:                                 {spf:.1f}"),
-        html.Div(f"Heat Pump Power:         {hd.heat_pump_size(b_type=building_type, b_age=building_year, A=area)} kW")
-    ])
-
-    return {"data-frame": df.reset_index().to_dict("records")}, fig2, df.columns.values, df.columns.values
-
-@app.callback(
-    Output('plot1','figure'),
-    Output('plot2','figure'),
-    Output('plot3','figure'),
-
-    Input('data','data'),
-    Input('plot1-quantity','value'),
-    Input('plot2-quantity','value'),
-    Input('plot1-style','value'),
-    Input('plot2-style','value'),
-    prevent_initial_call=True)
-def draw_plot(df_json, y1, y2, s1, s2):
-    df = pd.DataFrame(df_json["data-frame"]).set_index("index")
-
-    print(y1, y2, [df[t].dtype for t in [*y1, *y2]])
-
-    fig = px.line(df,y=y1) if s1 == 'line' else px.histogram(df, x=df.index, y=y1).update_traces(xbins_size="M1")
-    fig2 = px.line(df,y=y2) if s2 == 'line' else px.histogram(df, x=df.index, y=y2).update_traces(xbins_size="M1")
-    # generate plots
-   
-    fig3 = px.line(df, y=['Oil heating emissions [kg CO2eq]',
-                          'Gas heating emissions [kg CO2eq]',
-                          'heat pump emissions [kg CO2eq]'])
-    
-    marks = df['heat pump emissions [kg CO2eq]'] > df['Gas heating emissions [kg CO2eq]']
-    marks = marks.loc[marks.diff() != 0]
-    for i in range(len(marks)):
-        if marks.iat[i] > 0:
-            fig3.add_vrect(x0=marks.index[i], x1=marks.index[i+1], fillcolor="red", opacity=0.25, layer="below", line_width=0)
-
-    return fig, fig2, fig3
+    return {"data-frame": df.reset_index().to_dict("records"),
+            "heat-pump-power": hd.heat_pump_size(b_type=building_type, b_age=building_year, A=area)}, df.columns.values, df.columns.values
 
 
-def fetch_data(start_date,end_date,zip_code):
-    if start_date and end_date and zip_code:
-        start_date_object = datetime.fromisoformat(start_date)
-        end_date_object = datetime.fromisoformat(end_date)
-        df = datasource.fetch_all(country_code='DE', zip_code=zip_code, start=start_date_object, end=end_date_object,)
-    return df
-
-# Run the app
 if __name__ == '__main__':
     app.run_server(debug=False)

@@ -35,6 +35,12 @@ def load_TRY(selection:str):
   return None
 
 def fetch_all(country_code, zip_code, start, end, TRY_dataset=None):
+  if start and end and zip_code:
+    if isinstance(start, str):
+      start = datetime.fromisoformat(start)
+    if isinstance(end, str):
+      end = datetime.fromisoformat(end)
+
   tmpdf = co2intensity.load_all()
   
   lat, lon = geopos_from_zipcode(country_code, zip_code)
