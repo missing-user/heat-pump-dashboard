@@ -40,14 +40,14 @@ layout = html.Div([
     Input('data','data'),
   )
 def show_summaries(df_json):
-    df = pd.DataFrame(**df_json["data-frame"]).set_index("index")
+    df = pd.DataFrame(df_json["data-frame"]["data"], df_json["data-frame"]["index"], df_json["data-frame"]["columns"]).set_index("index")
     
     # compute total quantities
     df["heat pump emissions [kg CO2eq]"] = df["P_el heat pump [kW]"] * df["Intensity [g CO2eq/kWh]"] * 1e-3
     total_emission_hp = df["heat pump emissions [kg CO2eq]"].sum()
     total_emission_gas = df["Gas heating emissions [kg CO2eq]"].sum()
     total_emission_oil = df["Oil heating emissions [kg CO2eq]"].sum()
-    total_heat = df['Q_dot_H [kW]'].sum()
+    total_heat = df['Q_dot_required [kW]'].sum()
     total_electrical_energy_hp = df['P_el heat pump [kW]'].sum()
     spf = total_heat/total_electrical_energy_hp
 
@@ -76,7 +76,7 @@ def show_summaries(df_json):
     Input('plot2-style','value'),
     prevent_initial_call=True)
 def draw_plot(df_json, y1, y2, s1, s2):
-    df = pd.DataFrame(**df_json["data-frame"]).set_index("index")
+    df = pd.DataFrame(df_json["data-frame"]["data"], df_json["data-frame"]["index"], df_json["data-frame"]["columns"]).set_index("index")
     
     # generate plots
     fig = px.line(df,y=y1) if s1 == 'line' else px.histogram(df, x=df.index, y=y1).update_traces(xbins_size="M1")
@@ -87,7 +87,7 @@ def draw_plot(df_json, y1, y2, s1, s2):
     
     marks = df['heat pump emissions [kg CO2eq]'] > df['Gas heating emissions [kg CO2eq]']
     marks = marks.loc[marks.diff() != 0]
-    for i in range(len(marks)):
+    for i in range(len(marks) - 1):
         if marks.iat[i] > 0:
             fig3.add_vrect(x0=marks.index[i], x1=marks.index[i+1], fillcolor="red", opacity=0.25, layer="below", line_width=0)
 
