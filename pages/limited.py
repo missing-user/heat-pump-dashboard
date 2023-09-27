@@ -8,7 +8,7 @@ import pandas as pd
 import heatings
 import electricity as el
 import heatdemand as hd
-import io
+import dash_dangerously_set_inner_html
 import datasource
 from datetime import datetime, date
 import numpy as np
@@ -23,9 +23,15 @@ layout = html.Div([
     dcc.Loading(dcc.Graph(id='gauge-heatpump')),
     dcc.Loading(dcc.Graph(id='gauge-gas')),
     dcc.Loading(dcc.Graph(id='gauge-oil')),
-    ])
-])
+    ]),
 
+  dash_dangerously_set_inner_html.DangerouslySetInnerHTML('''
+      <style>.advanced {
+  visibility: collapse;
+  display: none !important;
+}</style>
+  '''),
+])
 
 @callback(
     Output('gauge-heatpump', 'figure'),

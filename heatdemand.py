@@ -11,18 +11,6 @@ def heat_pump_size(b_type, b_age, A):
   Q_dot_H_design = q_dot_H_design * A
   return Q_dot_H_design
 
-def heat_demand(df, b_type, b_age, t_design, A):
-  Q_dot_H_design = heat_pump_size(b_type, b_age, A)
-  q_dot_H_design = Q_dot_H_design/A
-  t_lim = tab_heat_demand.loc[tab_heat_demand["building_type"]== "Heizgrenztemperatur", b_age].iloc[0]
-  m = -q_dot_H_design/(abs(t_design)+t_lim)
-  c = q_dot_H_design - abs(t_design) * (q_dot_H_design/(abs(t_design)+t_lim))
-  t_amb = df["T_outside [°C]"]
-  df['q_dot_H [kW/m2]'] = m*t_amb+c
-  df["q_dot_H [kW/m2]"].clip(0,q_dot_H_design,inplace=True)
-  df["Q_dot_H [kW]"]=df['q_dot_H [kW/m2]'] * A
-  return df
-
 
 def get_heatpump_Q_dot(t_current, t_target, Q_dot_H_design):
    if t_current <= t_target:

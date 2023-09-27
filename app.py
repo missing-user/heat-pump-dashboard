@@ -22,10 +22,9 @@ app.layout = html.Div([
 
     # Inputs
     html.Div(children=[
-        html.Label('Enter location for weather data:'),
-        html.Label("Zip Code"),
+        html.Label("Zip Code (for weather data)"),
         dcc.Input(id="zip-input", type="number", value=80333, placeholder="Enter a Zip Code", debounce=True, persistence=False),
-        html.Label('Pick date range for simulation'),
+        html.Label('Date range for simulation'),
         dcc.Dropdown(id="year-input", options=list(range(2010, datetime.now().year)), value=2021, persistence=False),
         dcc.DatePickerRange(
             id='weather-date-picker-range',
@@ -41,15 +40,18 @@ app.layout = html.Div([
             options=hd.tab_heat_demand["building_type"],
             value=hd.tab_heat_demand.iloc[0,0], persistence=False
         ),
+        html.Label("Building year"),
         dcc.Dropdown(
             id='building-year-dropdown',
             options=hd.tab_heat_demand.columns[1:],
             value=hd.tab_heat_demand.columns[3], persistence=False
         ),
+        html.Label("Type of residents"),
         dcc.Dropdown(id="family-type-dropdown",
-                     options=[{"label":l,"value": v}for l,v in zip(el.list_readable_electricity_profiles(), el.list_electricity_profiles())],
+                     options=[{"label":l.replace(".dat", ""),"value": v}for l,v in zip(el.list_readable_electricity_profiles(), el.list_electricity_profiles())],
                      value=el.list_electricity_profiles()[0],persistence=False),
 
+        html.Label("Living area"),
         dcc.Input(id='area', min=1,value=120,type='number', placeholder="Enter area", debounce=True, persistence=False),
         html.Label("Floor count"),
         dcc.Input(2, min=1,type='number', placeholder="Enter number of floors", debounce=True, persistence=False),
