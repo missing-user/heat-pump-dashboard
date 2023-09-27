@@ -1,12 +1,12 @@
-Gebaeude Alter,Heatcapacity [kJ/m2K]
+building_year,Heatcapacity [kJ/m3K]
 GEG 20,324
 KfW 40,342
 KfW 55,342
 KfW 70,342
 after 2010,342
 1995-2010,400
-1984-94,468
-1979-83,468
-1969-78,468
-1949-68,468
-until 1948,468
+1984-1994 (2. WSchV),468
+1979-1983 (1. WSchV),468
+1969-1978,468
+1949-1968,468
+before 1948,468
