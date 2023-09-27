@@ -35,8 +35,7 @@ layout = html.Div([
     Input('data','data'),
 )
 def update_gauges(df_json):
-  if df_json is not None:
-    df = pd.DataFrame(**df_json["data-frame"]).set_index("index")
+  df = pd.DataFrame(df_json["data-frame"]["data"], df_json["data-frame"]["index"], df_json["data-frame"]["columns"]).set_index("index")
     
   gauge = go.Figure(go.Indicator(
     mode = "gauge+number",
