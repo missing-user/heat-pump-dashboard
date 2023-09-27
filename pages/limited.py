@@ -8,7 +8,7 @@ import pandas as pd
 import heatings
 import electricity as el
 import heatdemand as hd
-import io
+import dash_dangerously_set_inner_html
 import datasource
 from datetime import datetime, date
 import numpy as np
@@ -23,9 +23,14 @@ layout = html.Div([
     dcc.Loading(dcc.Graph(id='gauge-heatpump')),
     dcc.Loading(dcc.Graph(id='gauge-gas')),
     dcc.Loading(dcc.Graph(id='gauge-oil')),
-    ])
-])
+    ]),
 
+  dash_dangerously_set_inner_html.DangerouslySetInnerHTML('''
+<style>.advanced {
+  visibility: collapse;
+  display: none !important;
+}</style>'''),
+])
 
 @callback(
     Output('gauge-heatpump', 'figure'),
@@ -35,9 +40,8 @@ layout = html.Div([
     Input('data','data'),
 )
 def update_gauges(df_json):
-  if df_json is not None:
-    df = pd.DataFrame(**df_json["data-frame"]).set_index("index")
-
+  df = pd.DataFrame(df_json["data-frame"]["data"], df_json["data-frame"]["index"], df_json["data-frame"]["columns"]).set_index("index")
+    
   gauge = go.Figure(go.Indicator(
       domain={'x': [0, 1], 'y': [0, 1]},
       value=450,
