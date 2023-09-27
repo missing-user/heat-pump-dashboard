@@ -47,7 +47,7 @@ app.layout = html.Div([
         dcc.Dropdown(
             id='building-year-dropdown',
             options=hd.tab_heat_demand.columns[1:],
-            value=hd.tab_heat_demand.columns[3], persistence=False
+            value=hd.tab_heat_demand.columns[1], persistence=False
         ),
         html.Label("Residents"),
         dcc.Dropdown(id="family-type-dropdown",
@@ -57,7 +57,7 @@ app.layout = html.Div([
         html.Label("Living area"),
         dcc.Input(id='area', min=1,value=120,type='number', placeholder="Enter area", debounce=True, persistence=False),
         html.Label("Floor count"),
-        dcc.Input(2, min=1,type='number', placeholder="Enter number of floors", debounce=True, persistence=False),
+        dcc.Input(2,id='floor', min=1,type='number', placeholder="Enter number of floors", debounce=True, persistence=False),
 
         html.Label("Window area (m²)",className="advanced"),        
         dcc.Input(id="window-area", min=0,value=20,type='number', placeholder="Enter window area", debounce=True, persistence=False,className="advanced"),
@@ -111,6 +111,7 @@ def simple_date(year):
     Input('building-year-dropdown','value'),
     Input("family-type-dropdown", "value"),
     Input('area', 'value'),
+    Input('floor','value'),
     Input('window-area', 'value'),
     #Input("vorlauftemp-slider", "value"),
     Input("target-temp-slider", "value"),
@@ -119,7 +120,7 @@ def simple_date(year):
     )
 def update_dashboard(df_json,
                      zip_code, start_date, end_date, building_type,
-                     building_year, family_type, area, window_area, 
+                     building_year, family_type, area, n_floors, window_area,
                       temperature_target, model,
                      assumptions):
     hp_lib_df = pd.read_csv(hpl.cwd() + r'/data/hplib_database.csv', delimiter=',')
@@ -144,7 +145,7 @@ def update_dashboard(df_json,
     # compute P and electrical Power
     #df = heatings.compute_cop(df,model,vorlauf_temp)
     df = hd.simulate(df, b_type=building_type, hp_type=model, b_age=building_year,
-                     A_windows=window_area, A=area, 
+                     A_windows=window_area, A=area, n_floors=n_floors,
                      t_target=temperature_target,
                      assumptions=assumptions)
     #df = heatings.compute_P_electrical(df)
