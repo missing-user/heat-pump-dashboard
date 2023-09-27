@@ -2,7 +2,7 @@ import pandas as pd
 import numpy as np
 
 tab_heat_demand = pd.read_csv("data/heatingload/room_heating/spezifische Heizlast.csv",sep= ";" )
-uwerte = pd.read_csv("data/heatingload/room_heating/Uwerte.csv").set_index("Gebaeude Alter")
+uwerte = pd.read_csv("data/heatingload/room_heating/Uwerte.csv",sep=";").set_index("building_year")
 gwerte = pd.read_csv("data/heatingload/room_heating/Gwerte.csv").set_index("Gebaeude Alter")
 cwerte = pd.read_csv("data/heatingload/room_heating/Cwerte.csv").set_index("Gebaeude Alter")
 
@@ -66,9 +66,24 @@ def ventilation(b_type, volume):
 
   return 0.5 * volume * c_air / 3600.0 # kJ/sK
 
-def simulate(df, b_type, b_age, A, A_windows, t_target=20.0, considerations=[]):
+def calc_U(b_age, A_windows, A, n_floors, h_floor=3):
+    basement = A/n_floors
+    roof= A/n_floors
+    A_outsidewall = np.square(A/n_floors)*h_floor*n_floors*4
+
+    if(b_age=="KfW 70" or b_age=="KfW 40"):
+        U = (A_outsidewall + basement + roof) * uwerte.loc[b_age, "overall [W/m2K]"]  # W/K
+    else:
+        U = (((A_outsidewall-A_windows) * uwerte.loc[b_age,"outside wall [W/m2K]"])+
+             (roof * uwerte.loc[b_age,"roof [W/m2K]"])+
+             (basement* uwerte.loc[b_age,"basement [W/m2K]"])+
+             (A_windows* uwerte.loc[b_age,"windows [W/m2K]"])) #W/K
+
+    return U
+
+def simulate(df, b_type, b_age, A, A_windows, n_floors=2, t_target=20.0, considerations=[]):
   Q_dot_H_design = heat_pump_size(b_type, b_age, A)
-  U = uwerte.loc[b_age, "U-Wert [W/m2K]"]*1e-3
+  U = calc_U(b_age, A_windows, A, n_floors)
   specific_heat_capa = cwerte.loc[b_age, "Heatcapacity [kJ/m2K]"]
 
   volume = A * 3.0 # m3
