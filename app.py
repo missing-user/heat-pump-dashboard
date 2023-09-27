@@ -97,6 +97,12 @@ def simple_date(year):
     return date(year, 1,1).isoformat(), date(year, 12, 31).isoformat()
 
 @app.callback(
+    Output('window-area', 'value'),
+    Input('area','value'))
+def set_window_area(floor_area):
+    return floor_area * 0.2
+
+@app.callback(
     Output('data','data'),
     Output('plot1-quantity','options'),
     Output('plot2-quantity','options'),
@@ -113,7 +119,6 @@ def simple_date(year):
     Input('area', 'value'),
     Input('floor','value'),
     Input('window-area', 'value'),
-    #Input("vorlauftemp-slider", "value"),
     Input("target-temp-slider", "value"),
     Input('heatpump-model','value'),
     Input("model-assumptions", "value")

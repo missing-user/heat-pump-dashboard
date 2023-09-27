@@ -1,17 +1,10 @@
 import dash
-from dash import Dash, dcc, html, Input, Output, State, callback
+from dash import dcc, html, Input, Output, State, callback
 import plotly.express as px
 import plotly.graph_objects as go
 import plotly.io as pio
-from plotly.subplots import make_subplots
 import pandas as pd
-import heatings
-import electricity as el
-import heatdemand as hd
 import dash_dangerously_set_inner_html
-import datasource
-from datetime import datetime, date
-import numpy as np
 
 pio.templates.default = "plotly_white"
 

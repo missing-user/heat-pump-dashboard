@@ -2,6 +2,55 @@ body{
   margin: 1rem;
 }
 
+.popup{
+  position: absolute;
+  animation: fadein 1s forwards;
+}
+
+@keyframes fadein {
+  from { transform: translate(-50%, -30%); opacity: 0; }
+  to   { transform: translate(-50%, -50%); opacity: 1; }
+}
+
+@keyframes blink_background {
+  0% { background-color: yellow; }
+  49% { background-color: yellow; }
+  50% { background-color: greenyellow; }
+  100% { background-color: greenyellow; }
+}
+
+.newsletter{
+  max-width: 50rem;
+  padding: 2rem;
+  border-radius: 2rem;
+  background: linear-gradient(to right, #ff5f6d, #ffc371);
+}
+.cookies{
+  bottom:-10rem !important;
+  left: 50% !important;
+  height: 20rem;
+  width: 100%;
+  background-color: gray;
+}
+.ads{
+  padding: 3rem;
+  border-radius: 1rem;
+  animation: 1s infinite blink_background;
+}
+
+.imageclose{
+  position: absolute;
+  top: 0;
+  right: 0;
+  padding: 1rem;
+  cursor: pointer;
+  transition: 0.7s;
+}
+
+.imageclose:hover{
+  right: 100%;
+}
+
 .main-container{
   display: grid;
   grid-template-columns: 1fr;
@@ -11,6 +60,11 @@ body{
 .input-container{
   display: grid;
   grid-template-columns: 1fr;
+}
+
+#plot1-style, #plot2-style{
+  display: flex;
+  justify-content: space-around;
 }
 
 @media (min-width: 900px) {
