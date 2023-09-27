@@ -32,9 +32,9 @@ app.layout = html.Div([
             # TODO: check allowed date range
             min_date_allowed=date(2010, 1, 1),
             max_date_allowed=date(2022, 12, 31),
-            persistence=False
+            persistence=False,
+            className="advanced"
         ),
-        html.Div(id='selected-date'),
         html.Label('Select building type'),
         dcc.Dropdown(
             id='building-dropdown',
@@ -51,30 +51,33 @@ app.layout = html.Div([
                      value=el.list_electricity_profiles()[0],persistence=False),
 
         dcc.Input(id='area', min=1,value=120,type='number', placeholder="Enter area", debounce=True, persistence=False),
-        dcc.Input(id="window-area", min=0,value=20,type='number', placeholder="Enter window area", debounce=True, persistence=False),
-        dcc.Slider(id="vorlauftemp-slider", min=35, max=80, value=35, persistence=False),
-        dcc.Slider(id="target-temp-slider", min=15, max=25, value=20, persistence=False),
-        html.Label('Select model for heat pump'),
-
-        dcc.Dropdown(
-            id='heatpump-model',
-            options=[
-                {'label': 'Carnot', 'value': 'Carnot'},
-                {'label': 'sophisticated', 'value': 'soph'},
-            ],
-            value='Carnot',persistence=False
-        ),
         html.Label("Floor count"),
         dcc.Input(2, min=1,type='number', placeholder="Enter number of floors", debounce=True, persistence=False),
-        dcc.Dropdown(id="model-assumptions", multi=True, value=[], persistence=False, 
-                     options=["Close window blinds in summer", 
-                            "Ventilation heat losses", 
-                            "Time dependent electricity mix"]),
-        html.Br(),
-        dcc.Dropdown(id='plot1-quantity', multi=True, value="T_outside [°C]", placeholder="(mandatory) Select (multiple) y-Value(s)",persistence=False),
-        html.Div([html.Label("Plot 1 Style: "), dcc.RadioItems(["line", "bar"], "line", id="plot1-style")]),
-        dcc.Dropdown(id='plot2-quantity', multi=True, value="T_outside [°C]", placeholder="(mandatory) Select (multiple) y-Value(s)",persistence=False),
-        html.Div([html.Label("Plot 2 Style: "), dcc.RadioItems(["line", "bar"], "line", id="plot2-style")]),
+            
+        html.Div([
+            dcc.Input(id="window-area", min=0,value=20,type='number', placeholder="Enter window area", debounce=True, persistence=False),
+            dcc.Slider(id="vorlauftemp-slider", min=35, max=80, value=35, persistence=False),
+            dcc.Slider(id="target-temp-slider", min=15, max=25, value=20, persistence=False),
+            
+            html.Label('Select model for heat pump'),
+            dcc.Dropdown(
+                id='heatpump-model',
+                options=[
+                    {'label': 'Carnot', 'value': 'Carnot'},
+                    {'label': 'sophisticated', 'value': 'soph'},
+                ],
+                value='Carnot',persistence=False
+            ),
+            dcc.Dropdown(id="model-assumptions", multi=True, value=[], persistence=False, 
+                        options=["Close window blinds in summer", 
+                                "Ventilation heat losses", 
+                                "Time dependent electricity mix"]),
+            html.Br(),
+            dcc.Dropdown(id='plot1-quantity', multi=True, value="T_outside [°C]", placeholder="(mandatory) Select (multiple) y-Value(s)",persistence=False),
+            html.Div([html.Label("Plot 1 Style: "), dcc.RadioItems(["line", "bar"], "line", id="plot1-style")]),
+            dcc.Dropdown(id='plot2-quantity', multi=True, value="T_outside [°C]", placeholder="(mandatory) Select (multiple) y-Value(s)",persistence=False),
+            html.Div([html.Label("Plot 2 Style: "), dcc.RadioItems(["line", "bar"], "line", id="plot2-style")]),
+        ], className="advanced")
         ], style={'width': '300px'}),
 
     dash.page_container   
@@ -129,7 +132,6 @@ def update_dashboard(df_json,
         df["Intensity [g CO2eq/kWh]"] = df["Intensity [g CO2eq/kWh]"].mean()
 
     df:pd.DataFrame = el.load_el_profile(df, family_type)
-    # compute P and electrical Power
     df = heatings.compute_cop(df,model,vorlauf_temp)
     df = hd.simulate(df, b_type=building_type, b_age=building_year, 
                      A_windows=window_area, A=area, 
