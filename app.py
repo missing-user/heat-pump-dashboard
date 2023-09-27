@@ -1,5 +1,5 @@
 import dash
-from dash import dcc, html, Input, Output, callback
+from dash import dcc, html, Input, State, Output, callback
 import pandas as pd
 import heatings
 import electricity as el
@@ -26,15 +26,13 @@ app.layout = html.Div([
         html.Label("Zip Code"),
         dcc.Input(id="zip-input", type="number", value=80333, placeholder="Enter a Zip Code", debounce=True, persistence=True),
         html.Label('Pick date range for simulation'),
+        dcc.Dropdown(id="year-input", options=list(range(2010, datetime.now().year)), value=2021, persistence=True),
         dcc.DatePickerRange(
             id='weather-date-picker-range',
             # TODO: check allowed date range
-            min_date_allowed=date(2015, 1, 1),
+            min_date_allowed=date(2010, 1, 1),
             max_date_allowed=date(2022, 12, 31),
-            initial_visible_month=date(2021, 1, 1),
-            start_date=date(2021,1,1),
-            end_date=date(2021, 12, 31),
-            updatemode='bothdates', persistence=True
+            persistence=True
         ),
         html.Div(id='selected-date'),
         html.Label('Select building type'),
@@ -66,7 +64,8 @@ app.layout = html.Div([
             ],
             value='Carnot',persistence=True
         ),
-        html.Div(id='selected-heat-pump-model'),
+        html.Label("Floor count"),
+        dcc.Input(2, min=1,type='number', placeholder="Enter number of floors", debounce=True, persistence=True),
         dcc.Dropdown(id="model-assumptions", multi=True, value=[], persistence=True, 
                      options=["Close window blinds in summer", 
                             "Ventilation heat losses", 
@@ -81,11 +80,19 @@ app.layout = html.Div([
     dash.page_container   
 ])
 
+@app.callback(
+    Output("weather-date-picker-range","start_date"),
+    Output("weather-date-picker-range","end_date"),
+    Input("year-input", "value"))
+def simple_date(year):
+    return date(year, 1,1).isoformat(), date(year, 12, 31).isoformat()
 
 @app.callback(
     Output('data','data'),
     Output('plot1-quantity','options'),
     Output('plot2-quantity','options'),
+
+    State("data","data"),
 
     Input('zip-input', 'value'),
     Input('weather-date-picker-range', 'start_date'),
@@ -98,19 +105,30 @@ app.layout = html.Div([
     Input("vorlauftemp-slider", "value"),
     Input("target-temp-slider", "value"),
     Input('heatpump-model','value'),
-    Input("model-assumptions", "value"),
-    prevent_initial_call='initial_duplicate'
+    Input("model-assumptions", "value")
     )
-def update_dashboard(zip_code, start_date, end_date, building_type, 
+def update_dashboard(df_json,
+                     zip_code, start_date, end_date, building_type, 
                      building_year, family_type, area, window_area, 
                      vorlauf_temp, temperature_target, model, 
                      assumptions):
+    print(start_date, end_date)
+    
+    # If initial call, check for existence of a data-frame
+    print("triggered", dash.ctx.triggered_id)
+    if dash.ctx.triggered_id is None:
+        print("dataframe storage", df_json)
+        if df_json is not None:
+            print("prevented initial recalc call")
+            df = pd.DataFrame(df_json["data-frame"]).set_index("index")
+            return df_json, df.columns.values, df.columns.values
+
     # fetch data
-    df = datasource.fetch_all("DE", zip_code, start_date,end_date)
+    df = datasource.fetch_all("DE", zip_code, start_date, end_date)
     if not "Time dependent electricity mix" in assumptions:
         df["Intensity [g CO2eq/kWh]"] = df["Intensity [g CO2eq/kWh]"].mean()
 
-    df = el.load_el_profile(df, family_type)
+    df:pd.DataFrame = el.load_el_profile(df, family_type)
     # compute P and electrical Power
     df = heatings.compute_cop(df,model,vorlauf_temp)
     df = hd.simulate(df, b_type=building_type, b_age=building_year, 
@@ -121,7 +139,7 @@ def update_dashboard(zip_code, start_date, end_date, building_type,
     df = heatings.gas_heating(df)
     df = heatings.oil_heating(df)
 
-    return {"data-frame": df.reset_index().to_dict("records"),
+    return {"data-frame": df.reset_index().to_dict(orient="split"),
             "heat-pump-power": hd.heat_pump_size(b_type=building_type, b_age=building_year, A=area)}, df.columns.values, df.columns.values
 
 

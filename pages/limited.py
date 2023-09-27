@@ -8,7 +8,7 @@ import pandas as pd
 import heatings
 import electricity as el
 import heatdemand as hd
-
+import io
 import datasource
 from datetime import datetime, date
 import numpy as np
@@ -22,7 +22,6 @@ layout = html.Div([
   html.Div([
     html.Label("Zip Code"),
     dcc.Input(id="zip-input", type="number", value=80333, placeholder="Enter a Zip Code", debounce=True, persistence=True),    
-    dcc.Dropdown(id="year-input", options=list(range(2010, datetime.now().year)), value=2021, persistence=True),
     html.Label('Select building type'),
     dcc.Dropdown(
         id='building-dropdown',
@@ -60,8 +59,8 @@ layout = html.Div([
 )
 def update_gauges(df_json):
   if df_json is not None:
-    df = pd.DataFrame(df_json["data-frame"]).set_index("index")
-
+    df = pd.DataFrame(**df_json["data-frame"]).set_index("index")
+    
   gauge = go.Figure(go.Indicator(
     mode = "gauge+number",
     value = 270,

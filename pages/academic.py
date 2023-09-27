@@ -8,6 +8,7 @@ import pandas as pd
 import heatings
 import electricity as el
 import heatdemand as hd
+import io
 
 import datasource
 from datetime import datetime, date
@@ -39,7 +40,7 @@ layout = html.Div([
     Input('data','data'),
   )
 def show_summaries(df_json):
-    df = pd.DataFrame(df_json["data-frame"]).set_index("index")
+    df = pd.DataFrame(**df_json["data-frame"]).set_index("index")
     
     # compute total quantities
     df["heat pump emissions [kg CO2eq]"] = df["P_el heat pump [kW]"] * df["Intensity [g CO2eq/kWh]"] * 1e-3
@@ -75,8 +76,8 @@ def show_summaries(df_json):
     Input('plot2-style','value'),
     prevent_initial_call=True)
 def draw_plot(df_json, y1, y2, s1, s2):
-    df = pd.DataFrame(df_json["data-frame"]).set_index("index")
-
+    df = pd.DataFrame(**df_json["data-frame"]).set_index("index")
+    
     # generate plots
     fig = px.line(df,y=y1) if s1 == 'line' else px.histogram(df, x=df.index, y=y1).update_traces(xbins_size="M1")
     fig2 = px.line(df,y=y2) if s2 == 'line' else px.histogram(df, x=df.index, y=y2).update_traces(xbins_size="M1")   
