@@ -20,29 +20,6 @@ dash.register_page(__name__)
 # Define the layout of the app
 layout = html.Div([
   html.Div([
-    html.Label("Zip Code"),
-    dcc.Input(id="zip-input", type="number", value=80333, placeholder="Enter a Zip Code", debounce=True, persistence=True),    
-    html.Label('Select building type'),
-    dcc.Dropdown(
-        id='building-dropdown',
-        options=hd.tab_heat_demand["building_type"],
-        value=hd.tab_heat_demand.iloc[0,0], persistence=True
-    ),
-    html.Label('Select building year'),
-    dcc.Dropdown(
-        id='building-year-dropdown',
-        options=hd.tab_heat_demand.columns[1:],
-        value=hd.tab_heat_demand.columns[3], persistence=True
-    ),
-    html.Label('Load profile of habitants'),
-    dcc.Dropdown(id="family-type-dropdown",
-                  options=[{"label":l,"value": v}for l,v in zip(el.list_readable_electricity_profiles(), el.list_electricity_profiles())],
-                  value=el.list_electricity_profiles()[0],persistence=True),
-
-    dcc.Input(id='area', min=1,value=120,type='number', placeholder="Enter area", debounce=True, persistence=True),
-        
-  ]),
-  html.Div([
     dcc.Loading(dcc.Graph(id='gauge-heatpump')),
     dcc.Loading(dcc.Graph(id='gauge-gas')),
     dcc.Loading(dcc.Graph(id='gauge-oil')),
