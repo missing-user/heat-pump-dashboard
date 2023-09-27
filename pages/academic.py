@@ -28,7 +28,7 @@ def show_summaries(df_json):
     total_emission_hp = df["heat pump emissions [kg CO2eq]"].sum()
     total_emission_gas = df["Gas heating emissions [kg CO2eq]"].sum()
     total_emission_oil = df["Oil heating emissions [kg CO2eq]"].sum()
-    total_heat = df['Q_dot_required [kW]'].sum()
+    total_heat = df['Q_dot_demand [kW]'].sum()
     total_electrical_energy_hp = df['P_el heat pump [kW]'].sum()
     spf = total_heat/total_electrical_energy_hp
 
