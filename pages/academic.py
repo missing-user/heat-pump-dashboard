@@ -1,10 +1,7 @@
 import dash
 from dash import dcc, html, Input, Output, callback
 import plotly.express as px
-import plotly.io as pio
 import pandas as pd
-
-pio.templates.default = "plotly_white"
 
 dash.register_page(__name__)
 

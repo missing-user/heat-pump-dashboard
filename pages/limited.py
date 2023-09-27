@@ -2,11 +2,8 @@ import dash
 from dash import dcc, html, Input, Output, State, callback
 import plotly.express as px
 import plotly.graph_objects as go
-import plotly.io as pio
 import pandas as pd
 import dash_dangerously_set_inner_html
-
-pio.templates.default = "plotly_white"
 
 dash.register_page(__name__)
 

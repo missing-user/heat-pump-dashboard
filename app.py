@@ -148,13 +148,10 @@ def update_dashboard(df_json,
         df["Intensity [g CO2eq/kWh]"] = df["Intensity [g CO2eq/kWh]"].mean()
 
     df:pd.DataFrame = el.load_el_profile(df, family_type)
-    # compute P and electrical Power
-    #df = heatings.compute_cop(df,model,vorlauf_temp)
     df = hd.simulate(df, b_type=building_type, hp_type=model, b_age=building_year,
                      A_windows=window_area, A=area, n_floors=n_floors,
                      t_target=temperature_target,
                      assumptions=assumptions)
-    #df = heatings.compute_P_electrical(df)
     df = heatings.gas_heating(df)
     df = heatings.oil_heating(df)
 
