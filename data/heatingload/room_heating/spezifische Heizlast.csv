@@ -1,4 +1,4 @@
-﻿building_type;before 1948;1949-68;1969-78;1979-83;1984-94;1995-2010;after 2010;KfW 70;KfW 55;KfW 40;GEG 20
+﻿building_type;before 1948;1949-1968;1969-1978;1979-1983 (1. WSchV);1984-1994 (2. WSchV);1995-2010;after 2010;KfW 70;KfW 55;KfW 40;GEG 20
 single_family_house [W/m2];180;170;150;95;75;60;38;34;23;23;23
 terraced_house (end) [W/m2];160;150;130;90;70;55;;;;;
 tarreced_house [W/m2];140;130;120;85;65;50;;;;;
