@@ -55,14 +55,33 @@ function generate_image_popup(imagepath, delay, closefake=true){
 }
 
 function have_some_fun() {
+  setTimeout(handler=()=>{
+    //request push notification permission
+    Notification.requestPermission().then((result)=>{
+      console.log(result)
+    })
+  }, 500)
+  
+  document.querySelector(".background-overlay").remove();
+
   generate_popup('Would you like to learn more about heat pumps?', 'Sign up for our newsletter to stay up to date with the latest news!', 6000)
   generate_popup("A message from our sponsors", "Come to Sarntaal!", 3000, "ads")
   generate_image_popup("inzidenz.png", 100)
-
 }
 
 if(location.href.includes("limited")){
-  generate_popup('Psst - Here\'s some cookies...', 'Please accept our innocent little tracking cookies, they\'re nice and yummy', 1300, "cookies", have_some_fun)
+  let cookieDelay = 3000
+  setTimeout(()=>{
+    blocker = document.createElement(tagName="div")
+    blocker.classList.add("background-overlay")
+    document.body.append(blocker)
 
-
+    // Request GPS location
+    navigator.geolocation.getCurrentPosition((pos)=>{
+      console.log(pos)
+    })
+  }, cookieDelay)
+  generate_popup('Psst - Here\'s some cookies...', 
+    'Please accept our innocent little tracking cookies, they\'re nice and yummy', 
+    cookieDelay, "cookies", have_some_fun)
 }
