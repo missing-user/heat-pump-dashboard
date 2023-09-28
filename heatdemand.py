@@ -34,6 +34,7 @@ def simulate_np(P_internal: np.ndarray, T_outside_series: np.ndarray,
     Q_dot_transferred = np.zeros_like(T_outside_series)
     Q_dot_demand = np.zeros_like(T_outside_series)
     Q_dot_ideal = np.zeros_like(T_outside_series)
+    T_inside_ideal = np.zeros_like(T_outside_series)
     Q_H = np.zeros_like(T_outside_series)
     Q_H_idealized = np.zeros_like(T_outside_series)
 
@@ -42,38 +43,36 @@ def simulate_np(P_internal: np.ndarray, T_outside_series: np.ndarray,
     heating = False
     for i in range(len(T_outside_series) - 1):
         T_inside = Q_H[i] / C
-        T_inside_ideal = Q_H_idealized[i] / C
+        T_inside_ideal[i] = Q_H_idealized[i] / C
         T_outside = T_outside_series[i]
 
-        Q_dot = Q_dot_loss[i] = (T_outside - T_inside) * UA
-        Q_dot_ventilation[i] = (T_outside - T_inside) * ventilation[i]
+        Q_dot = Q_dot_loss[i] = (T_outside - T_inside) * UA # losses through wall&roof
+        Q_dot_ventilation[i] = (T_outside - T_inside) * ventilation[i] # ventilation losses
         Q_dot += Q_dot_ventilation[i]  # ventilation (already has a negative sign)
-
         Q_dot += P_internal[i]  # appliances & humans
+        Q_dot_transferred[i] = Q_dot
+        Q_dot_required[i] = max(0, -Q_dot_transferred[i])  # prevent cooling
 
-        Q_dot_ideal[i] = (T_outside - T_inside_ideal) * (UA + ventilation[i]) + P_internal[i]
+        # heat demand calculation
+        Q_dot_ideal[i] = (T_outside - T_inside_ideal[i]) * (UA + ventilation[i]) + P_internal[i]
         Q_dot_demand[i] = -Q_dot_ideal[i] # Wärmebedarf nach DIN ISO leck mich (idealisiert)
-
-        Q_dot_ideal[i] = max(Q_dot_ideal[i],0.) # heating required if Q_dot_demand < 0
         Q_dot_demand[i] = max(0, Q_dot_demand[i]) # filter out heat inflow
-
-        if T_inside_ideal > t_target:
-            Q_dot_ideal[i] = -Q_dot_demand[i]
+        if T_inside_ideal[i] < t_target:
+            Q_dot_ideal[i] = max(0, Q_dot_ideal[i])
+        else:
             Q_dot_demand[i] = 0.
 
-        Q_dot_transferred[i] = Q_dot
-        Q_dot_required[i] = max(0, -Q_dot_transferred[i]) # prevent cooling
-
+        # simple controller #   #   #   #   #   #   #   #   #   #   #
         if T_inside > t_target + t_range or not heating:
             heating = False
-
         if T_inside < t_target - t_range or heating:
             heating = True
-
         if not heating:
             Q_dot_required[i] = 0.
             Q_dot_supplied[i] = 0.
+        # simple controller #   #   #   #   #   #   #   #   #   #   #
 
+        # co2 controller #   #   #   #   #   #   #   #   #   #   #
         # prioritize CO2 emissions over room temperature (within a range) to switch on heating
         '''if intensity_series[i] < co2_threshold:
             if T_inside > t_target+t_range:
@@ -84,13 +83,14 @@ def simulate_np(P_internal: np.ndarray, T_outside_series: np.ndarray,
             if T_inside > t_target - t_range:
                 Q_dot_required[i] = 0.
                 Q_dot_supplied[i] = 0.'''
+        # co2 controller #   #   #   #   #   #   #   #   #   #   #
 
         Q_dot += Q_dot_supplied[i]
 
         # explicit euler integration
         Q_H_idealized[i + 1] = Q_H_idealized[i] + Q_dot_ideal[i] * timestep
         Q_H[i + 1] = Q_H[i] + Q_dot * timestep
-    return Q_H, Q_dot_loss, Q_dot_ventilation, Q_dot_required, Q_dot_supplied, Q_dot_transferred, Q_dot_demand, Q_dot_ideal
+    return Q_H, Q_dot_loss, Q_dot_ventilation, Q_dot_required, Q_dot_supplied, Q_dot_transferred, Q_dot_demand, Q_dot_ideal, T_inside_ideal
 
 
 def ventilation(b_type, volume):
@@ -144,7 +144,7 @@ def simulate(df, hp_type, b_type, b_age, A, A_windows, n_floors=2, t_target=20.0
     P_internal = (df["P_el appliances [kW]"] + df["Q_dot_solar [kW]"]).to_numpy()
     df = heatings.simulate_hp(df, model=hp_type)
 
-    Q_H, Q_dot_loss, Q_dot_vent, Q_dot_required, Q_dot_supplied, Q_dot_transferred, Q_dot_demand, Q_dot_idealized = simulate_np(P_internal,
+    Q_H, Q_dot_loss, Q_dot_vent, Q_dot_required, Q_dot_supplied, Q_dot_transferred, Q_dot_demand, Q_dot_idealized, T_inside_ideal = simulate_np(P_internal,
                                                                               df["T_outside [°C]"].to_numpy(),
                                                                               ventilation_series,
                                                                               df["Intensity [g CO2eq/kWh]"].to_numpy(),
@@ -158,7 +158,7 @@ def simulate(df, hp_type, b_type, b_age, A, A_windows, n_floors=2, t_target=20.0
     df['Q_dot_transferred [kW]'] = Q_dot_transferred
     df['Q_dot_demand [kW]'] = Q_dot_demand
     df['Q_dot_idealized [kW]'] = Q_dot_idealized
-
+    df['T_inside_ideal [°C]'] = T_inside_ideal
 
     df.loc[df.loc[:, 'Q_dot_supplied [kW]'] == 0, 'COP heatpump'] = np.nan
     df.loc[df.loc[:, 'Q_dot_supplied [kW]'] == 0, 'P_el heat pump [kW]'] = 0.
