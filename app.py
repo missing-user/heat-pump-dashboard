@@ -64,6 +64,9 @@ app.layout = html.Div([
 
         html.Label("Target temperature (°C)",className="advanced"),
         dcc.Slider(id="target-temp-slider", min=15, max=25, value=20, persistence=True,className="advanced"),
+
+        html.Label("Comfort temperature range (+-) (°C)",className="advanced"),
+        dcc.Slider(id="target-temp-range-slider", min=0, max=5, value=1, persistence=True,className="advanced"),
         
         html.Label('Heat pump model',className="advanced"),
         dcc.Dropdown(id='heatpump-model', value='Carnot',persistence=True,className="advanced"),
@@ -121,13 +124,14 @@ def set_window_area(floor_area):
     Input('floor','value'),
     Input('window-area', 'value'),
     Input("target-temp-slider", "value"),
+    Input("target-temp-range-slider", "value"),
     Input('heatpump-model','value'),
     Input("model-assumptions", "value")
     )
 def update_dashboard(df_json,
                      zip_code, start_date, end_date, building_type,
                      building_year, family_type, area, n_floors, window_area,
-                      temperature_target, model,
+                      temperature_target, range_target, model,
                      assumptions):
     hp_lib_df = pd.read_csv(hpl.cwd() + r'/data/hplib_database.csv', delimiter=',')
     hp_lib_df = hp_lib_df.loc[hp_lib_df['Type'] == 'Outdoor Air/Water', :]
@@ -151,7 +155,7 @@ def update_dashboard(df_json,
     df:pd.DataFrame = el.load_el_profile(df, family_type)
     df = hd.simulate(df, b_type=building_type, hp_type=model, b_age=building_year,
                      A_windows=window_area, A=area, n_floors=n_floors,
-                     t_target=temperature_target,
+                     t_target=temperature_target, t_range=range_target,
                      assumptions=assumptions)
     df = heatings.gas_heating(df)
     df = heatings.oil_heating(df)

@@ -22,10 +22,9 @@ def get_heatpump_Q_dot(t_current, t_target, Q_dot_H_design):
 
 def simulate_np(P_internal: np.ndarray, T_outside_series: np.ndarray,
                 ventilation: np.ndarray, intensity_series: np.ndarray, Q_dot_supplied: np.ndarray,
-                Q_dot_H_design: float, t_target: float,
+                Q_dot_H_design: float, t_target: float, t_range:float,
                 UA: float, C: float, controller:str):
     timestep = 3600.0  # h
-    t_range = 0.
     co2_threshold = intensity_series.mean()
     print(co2_threshold)
 
@@ -118,7 +117,7 @@ def calc_U(b_age, A_windows, A, n_floors, h_floor=3):
     return UA
 
 
-def simulate(df, hp_type, b_type, b_age, A, A_windows, n_floors=2, t_target=20.0, assumptions=[]):
+def simulate(df, hp_type, b_type, b_age, A, A_windows, n_floors=2, t_target=20.0, t_range=1., assumptions=[]):
     Q_dot_H_design = heat_pump_size(b_type, b_age, A)
     UA = calc_U(b_age, A_windows, A, n_floors)
     specific_heat_capa = cwerte.loc[b_age, "Heatcapacity [kJ/m3K]"]
@@ -157,7 +156,7 @@ def simulate(df, hp_type, b_type, b_age, A, A_windows, n_floors=2, t_target=20.0
                                                                               ventilation_series,
                                                                               df["Intensity [g CO2eq/kWh]"].to_numpy(),
                                                                               df['Q_dot_supplied [kW]'].to_numpy(),
-                                                                              Q_dot_H_design, t_target, UA, C, controller)
+                                                                              Q_dot_H_design, t_target, t_range, UA, C, controller)
     df["Q_H [kJ]"] = Q_H
     df["Q_dot_loss [kW]"] = Q_dot_loss
     df["Q_dot_ventilation [kW]"] = Q_dot_vent
