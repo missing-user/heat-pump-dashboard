@@ -73,7 +73,8 @@ app.layout = html.Div([
                      options=["Close window blinds in summer", 
                             "Ventilation heat losses", 
                             "Time dependent electricity mix",
-                            "CO2 aware controller"],className="advanced"),
+                            "CO2 aware controller",
+                            "Floor heating"],className="advanced"),
 
         html.Label("Plot 1 Quantities",className="advanced"), 
         dcc.Dropdown(id='plot1-quantity', multi=True, value="T_outside [°C]", placeholder="(mandatory) Select (multiple) y-Value(s)",persistence=True,className="advanced"),

@@ -5,10 +5,8 @@ import hplib_database as hpd
 import time
 from scipy.interpolate import interp1d
 
-vorlauf_lookup  = {'t_amb': np.array([-15, -10, 0, 10, 25, 26, 50]),
-                   #'t_vl': np.array([90, 80, 70, 70, 60, 0, 0]),
-                   't_vl': np.array([70, 60, 50, 50, 40, 0, 0]),
-                   }
+t_vorlauf_conventional = pd.read_csv("data/heatingload/room_heating/t_vorlauf_conventional.csv")
+t_vorlauf_floor = pd.read_csv("data/heatingload/room_heating/t_vorlauf_floorheating.csv")
 
 def compute_cop(df,model, t_vl=35.):
     df.loc[:, 'COP heatpump'] = np.nan
@@ -39,7 +37,7 @@ def gas_heating(df):
     eta = .95
 
     # compute power demand and emissions
-    df.loc[:, 'Gas heating emissions [kg CO2eq]'] = df.loc[:,'Q_dot_required [kW]'] / eta * intensity * 1e-3
+    df.loc[:, 'Gas heating emissions [kg CO2eq]'] = df.loc[:,'Q_dot_demand [kW]'] / eta * intensity * 1e-3
     return df
 
 def oil_heating(df):
@@ -48,7 +46,7 @@ def oil_heating(df):
     eta = .95
 
     # compute power demand and emissions
-    df.loc[:, 'Oil heating emissions [kg CO2eq]'] = df.loc[:,'Q_dot_required [kW]'] / eta * intensity * 1e-3
+    df.loc[:, 'Oil heating emissions [kg CO2eq]'] = df.loc[:,'Q_dot_demand [kW]'] / eta * intensity * 1e-3
     return df
 
 def pellet_heating(df):
@@ -57,7 +55,7 @@ def pellet_heating(df):
     eta = .95
 
     # compute power demand and emissions
-    df.loc[:, 'Pellet heating emissions [kg CO2eq]'] = df.loc[:,'Q_dot_required [kW]'] / eta * intensity * 1e-3
+    df.loc[:, 'Pellet heating emissions [kg CO2eq]'] = df.loc[:,'Q_dot_demand [kW]'] / eta * intensity * 1e-3
     return df
 
 def simulate_hp_inverse(df, model='Bosch Compress 3000 AWS-8 B'):
@@ -104,12 +102,22 @@ def simulate_hp_inverse(df, model='Bosch Compress 3000 AWS-8 B'):
     df.loc[:, 'COP heatpump'] = np.nan
     return df
 
-def simulate_hp(df,model):
+def simulate_hp(df,model,system, age):
     # Create heat pump object with parameters
     parameters = hpl.get_parameters(model=model)
     heatpump = hpl.HeatPump(parameters)
 
-    vorlauf_interpfunc = interp1d(vorlauf_lookup['t_amb'], vorlauf_lookup['t_vl'], kind='linear')
+    if system == "Floor heating":
+        print('floor')
+        # pick floor heating vorlauf temperatures
+        t_vorlauf = t_vorlauf_floor
+    else:
+        print('conventional')
+        t_vorlauf = t_vorlauf_conventional[t_vorlauf_conventional['building_year']==age]
+
+
+    vorlauf_interpfunc = interp1d(t_vorlauf['t_amb [°C]'], t_vorlauf['t_vl [°C]'], kind='linear')
+
     df['T_vorlauf [°C]'] = vorlauf_interpfunc(df['T_outside [°C]'])
     df['T_in_secondary'] = df['T_vorlauf [°C]'] - 5.
 

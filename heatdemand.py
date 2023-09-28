@@ -25,7 +25,7 @@ def simulate_np(P_internal: np.ndarray, T_outside_series: np.ndarray,
                 Q_dot_H_design: float, t_target: float,
                 UA: float, C: float, controller:str):
     timestep = 3600.0  # h
-    t_range = 2.
+    t_range = 0.
     co2_threshold = intensity_series.mean()
     print(co2_threshold)
 
@@ -136,6 +136,10 @@ def simulate(df, hp_type, b_type, b_age, A, A_windows, n_floors=2, t_target=20.0
     if "CO2 aware controller" in assumptions:
         controller = "CO2 aware controller"
 
+    heating_system = "conventional"
+    if "Floor heating" in assumptions:
+        heating_system = "Floor heating"
+
     df["P_solar [kW]"] = float(A_windows) / 4 * (
                 df["p_solar south [kW/m2]"] + df["p_solar east [kW/m2]"] + df["p_solar west [kW/m2]"])
     df["Q_dot_solar [kW]"] = df["P_solar [kW]"] * gwerte.loc[
@@ -146,7 +150,7 @@ def simulate(df, hp_type, b_type, b_age, A, A_windows, n_floors=2, t_target=20.0
         df.loc[df["T_outside [°C]"] > t_target, "Q_dot_solar [kW]"] *= 0.1
 
     P_internal = (df["P_el appliances [kW]"] + df["Q_dot_solar [kW]"]).to_numpy()
-    df = heatings.simulate_hp(df, model=hp_type)
+    df = heatings.simulate_hp(df, model=hp_type, system=heating_system, age=b_age)
 
     Q_H, Q_dot_loss, Q_dot_vent, Q_dot_required, Q_dot_supplied, Q_dot_transferred, Q_dot_demand, Q_dot_idealized, T_inside_ideal = simulate_np(P_internal,
                                                                               df["T_outside [°C]"].to_numpy(),
