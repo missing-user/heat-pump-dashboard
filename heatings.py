@@ -6,8 +6,9 @@ import time
 from scipy.interpolate import interp1d
 
 vorlauf_lookup  = {'t_amb': np.array([-15, -10, 0, 10, 25, 26, 50]),
-                   't_vl': np.array([90, 80, 70, 70, 60, 0, 0]),
-                   't_rl': np.array([60, 60, 55, 55, 55, 0, 0])}
+                   #'t_vl': np.array([90, 80, 70, 70, 60, 0, 0]),
+                   't_vl': np.array([70, 60, 50, 50, 40, 0, 0]),
+                   }
 
 def compute_cop(df,model, t_vl=35.):
     df.loc[:, 'COP heatpump'] = np.nan
