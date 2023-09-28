@@ -5,6 +5,8 @@ body{
 .popup{
   position: absolute;
   animation: fadein 1s forwards;
+  max-height: 55rem;
+  max-width: 60rem;
 }
 
 @keyframes fadein {
@@ -52,7 +54,7 @@ body{
   right: 0;
   padding: 1rem;
   cursor: pointer;
-  transition: 0.7s;
+  transition: 0.2s;
 }
 
 .main-container{
@@ -65,6 +67,11 @@ body{
   display: grid;
   grid-template-columns: 1fr;
   row-gap: 1rem;
+}
+
+.popup__text{
+  max-width: 60em;
+  text-align: center;
 }
 
 #plot1-style, #plot2-style{

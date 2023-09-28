@@ -10,10 +10,11 @@ dash.register_page(__name__)
 # Define the layout of the app
 layout = html.Div([
   html.Div([
+    html.Div(id="total-emissions2"),
     dcc.Loading(dcc.Graph(id='gauge-heatpump')),
-    dcc.Loading(dcc.Graph(id='gauge-gas')), 
     dcc.Loading(dcc.Graph(id='gauge-oil')),
-  ], className="grid-container thirds"),
+    dcc.Loading(dcc.Graph(id='gauge-gas')), 
+  ], className="grid-container halves"),
 
   dash_dangerously_set_inner_html.DangerouslySetInnerHTML('''
 <style>.advanced {
@@ -81,3 +82,34 @@ def update_gauges(df_json):
        )).update_layout(title_text="Annual CO2 emissions [kg CO2eq]", yaxis_title="kg CO2eq",height=600)
   
   return gauge, gauge_2 , barchart
+
+
+
+@callback(
+    Output('total-emissions2','children'),    
+    Input('data','data'),
+  )
+def show_summaries(df_json):
+    df = pd.DataFrame(df_json["data-frame"]["data"], df_json["data-frame"]["index"], df_json["data-frame"]["columns"]).set_index("index")
+    
+    # compute total quantities
+    df["heat pump emissions [kg CO2eq]"] = df["P_el heat pump [kW]"] * df["Intensity [g CO2eq/kWh]"] * 1e-3
+    total_emission_hp = df["heat pump emissions [kg CO2eq]"].sum()
+    total_emission_gas = df["Gas heating emissions [kg CO2eq]"].sum()
+    total_emission_oil = df["Oil heating emissions [kg CO2eq]"].sum()
+    total_heat = df['Q_dot_demand [kW]'].sum()
+    total_electrical_energy_hp = df['P_el heat pump [kW]'].sum()
+    spf = total_heat/total_electrical_energy_hp
+
+    # display total quantities
+    fig2 = html.Div(children=[
+        html.Div(f"Total heat demand:                   {total_heat:.1f} kWh"),
+        html.Div(f"Total electrical energy (heat pump): {total_electrical_energy_hp:.1f} kWh"),
+        html.Div(f"Total CO2 emissions (heat pump):     {total_emission_hp:.1f} kg CO2eq"),
+        html.Div(f"Total CO2 emissions (oil heating):   {total_emission_oil:.1f} kg CO2eq"),
+        html.Div(f"Total CO2 emissions (gas heating):   {total_emission_gas:.1f} kg CO2eq"),
+        html.Div(f"Seasonal performance factor:         {spf:.1f}"),
+        html.Div(f"Suggested heat pump power:         {df_json['heat-pump-power']:.1f} kW")
+    ])
+
+    return fig2

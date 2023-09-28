@@ -17,8 +17,6 @@ app = dash.Dash(__name__, use_pages=True)
 
 # Define the layout of the app
 app.layout = html.Div([
-    html.A("Free",href="./limited"),
-    html.A("Premium",href="./academic"),
     dcc.Store('data'),
 
     # Inputs
@@ -173,4 +171,4 @@ def update_dashboard(df_json,
 
 
 if __name__ == '__main__':
-    app.run_server(debug=True)
+    app.run_server(debug=False, host="0.0.0.0", port=8050)

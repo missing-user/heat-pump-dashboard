@@ -27,11 +27,6 @@ const cellOptions = [
   {
     classification: "meat",
     imgSrc:
-      "assets/IMG_6345.png"
-  },
-  {
-    classification: "meat",
-    imgSrc:
       "assets/IMG_6355.png"
   },
   {
@@ -138,7 +133,15 @@ submitButton.addEventListener("click", () => {
     document.querySelector(".captcha-wrap").classList.remove("error");
     document.querySelector(".background-overlay").remove();
     document.querySelector(".captcha-wrap").remove();
+
+    // Navigate to the next page
+    window.location.href = "http://127.0.0.1:8050/limited";
   }
 });
 
+}
+
+
+if(location.href.includes("captcha")){
+  createCaptcha()
 }
