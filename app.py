@@ -1,6 +1,9 @@
 import dash
+import numpy as np
 from dash import dcc, html, Input, State, Output, callback
 import pandas as pd
+
+import co2intensity
 import heatings
 import electricity as el
 import heatdemand as hd
@@ -77,6 +80,11 @@ app.layout = html.Div([
                             "CO2 aware controller",
                             "Floor heating"],className="advanced"),
 
+        html.Label("Modify electricity mix", className="advanced"),
+        dcc.Dropdown(id="electricity-source", multi=False,value=[],persistence=True,className="advanced"),
+        html.Label("electricity weighted", className="advanced"),
+        dcc.Slider(id="electricity-weight", min=0.,max=100.,value=0.,persistence=True,className="advanced"),
+
         html.Label("Plot 1 Quantities",className="advanced"), 
         dcc.Dropdown(id='plot1-quantity', multi=True, value="T_outside [°C]", placeholder="(mandatory) Select (multiple) y-Value(s)",persistence=True,className="advanced"),
         html.Label("Plot 1 Style",className="advanced"), 
@@ -109,6 +117,8 @@ def set_window_area(floor_area):
     Output('plot1-quantity','options'),
     Output('plot2-quantity','options'),
     Output('heatpump-model', 'options'),
+    Output("electricity-source", "options"),
+    Output("electricity-weight","value"),
 
     State("data","data"),
 
@@ -124,13 +134,15 @@ def set_window_area(floor_area):
     Input("target-temp-slider", "value"),
     Input("target-temp-range-slider", "value"),
     Input('heatpump-model','value'),
-    Input("model-assumptions", "value")
+    Input("model-assumptions", "value"),
+    Input("electricity-source","value"),
+    Input("electricity-weight","value"),
     )
 def update_dashboard(df_json,
                      zip_code, start_date, end_date, building_type,
                      building_year, family_type, area, n_floors, window_area,
                       temperature_target, range_target, model,
-                     assumptions):
+                     assumptions, electricity_source, electricity_weight):
     hp_lib_df = pd.read_csv(hpl.cwd() + r'/data/hplib_database.csv', delimiter=',')
     hp_lib_df = hp_lib_df.loc[hp_lib_df['Type'] == 'Outdoor Air/Water', :]
     if model is None:
@@ -150,6 +162,43 @@ def update_dashboard(df_json,
     if not "Time dependent electricity mix" in assumptions:
         df["Intensity [g CO2eq/kWh]"] = df["Intensity [g CO2eq/kWh]"].mean()
 
+    if electricity_source:
+        # no weight specified
+        if not electricity_weight:
+            electricity_weight = df[electricity_source].mean()
+        else:
+            mean_weight = df[electricity_source].mean()
+            # modify columns
+            scaling = electricity_weight / mean_weight
+            df_copy = df.copy()
+            df_copy[electricity_source] = df_copy[electricity_source] * scaling
+            total_percentage_to_distribute = 100 - df_copy[electricity_source]
+
+            remaining_df = df_copy.filter(regex="[%]")
+            remaining_df.drop(columns=electricity_source,inplace=True)
+            scaling_factor = total_percentage_to_distribute / (remaining_df.sum(axis=1))
+            for col in remaining_df.columns:
+                remaining_df[col] = remaining_df[col] * scaling_factor
+                df_copy.loc[:,col] = remaining_df.loc[:,col].clip(lower=0, upper=100)
+            df_copy[electricity_source] = df_copy[electricity_source].clip(lower=0, upper=100)
+
+            intensity_df = pd.read_csv("data/co2intensity/co2intensities.csv", sep=';')
+            intensity_lookup = intensity_df.set_index("Emissions [g CO2eq/kWh]")
+            for energy_type in df_copy.columns:
+                if (intensity_df["Emissions [g CO2eq/kWh]"] == energy_type.replace( "[%]","[MWh] Calculated resolutions")).any():
+                    intensity_name = energy_type
+                    #df_copy[intensity_name] = df_copy[energy_type] / df_copy["MWh sum"] * 100
+                    df_copy["Intensity [g CO2eq/kWh]"] += df_copy[intensity_name] * 1e-2 * intensity_lookup.loc[
+                        energy_type.replace("[%]","[MWh] Calculated resolutions"), "Med"]
+            pass
+            for col in df_copy.columns:
+                df[col] = df_copy[col]
+
+    else:
+        electricity_weight = 0.
+    electricity_sources = df.filter(regex='[%]').columns
+
+
     df:pd.DataFrame = el.load_el_profile(df, family_type)
     df = hd.simulate(df, b_type=building_type, hp_type=model, b_age=building_year,
                      A_windows=window_area, A=area, n_floors=n_floors,
@@ -167,7 +216,7 @@ def update_dashboard(df_json,
     return {"data-frame": df.reset_index().to_dict("split"),
             "heat-pump-power": requested_hp_power,
             "area":area,
-            }, df.columns.values, df.columns.values, hp_options
+            }, df.columns.values, df.columns.values, hp_options, electricity_sources, electricity_weight
 
 
 if __name__ == '__main__':
