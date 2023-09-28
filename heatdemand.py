@@ -23,10 +23,11 @@ def get_heatpump_Q_dot(t_current, t_target, Q_dot_H_design):
 def simulate_np(P_internal: np.ndarray, T_outside_series: np.ndarray,
                 ventilation: np.ndarray, intensity_series: np.ndarray, Q_dot_supplied: np.ndarray,
                 Q_dot_H_design: float, t_target: float,
-                UA: float, C: float):
+                UA: float, C: float, controller:str):
     timestep = 3600.0  # h
     t_range = 2.
-    co2_threshold = 500.
+    co2_threshold = intensity_series.mean()
+    print(co2_threshold)
 
     Q_dot_loss = np.zeros_like(T_outside_series)
     Q_dot_ventilation = np.zeros_like(T_outside_series)
@@ -62,28 +63,27 @@ def simulate_np(P_internal: np.ndarray, T_outside_series: np.ndarray,
         else:
             Q_dot_demand[i] = 0.
 
-        # simple controller #   #   #   #   #   #   #   #   #   #   #
-        if T_inside > t_target + t_range or not heating:
-            heating = False
-        if T_inside < t_target - t_range or heating:
-            heating = True
-        if not heating:
-            Q_dot_required[i] = 0.
-            Q_dot_supplied[i] = 0.
-        # simple controller #   #   #   #   #   #   #   #   #   #   #
 
         # co2 controller #   #   #   #   #   #   #   #   #   #   #
-        # prioritize CO2 emissions over room temperature (within a range) to switch on heating
-        '''if intensity_series[i] < co2_threshold:
-            if T_inside > t_target+t_range:
-                # TODO: dynamic threshold for optimal CO2 usage
+        if controller is "CO2 aware controller":
+            if intensity_series[i] < co2_threshold:
+                if T_inside > t_target + t_range:
+                    # TODO: dynamic threshold for optimal CO2 usage
+                    Q_dot_required[i] = 0.
+                    Q_dot_supplied[i] = 0.
+            else:
+                if T_inside > t_target - t_range:
+                    Q_dot_required[i] = 0.
+                    Q_dot_supplied[i] = 0.
+        # simple controller #   #   #   #   #   #   #   #   #   #   #
+        else:
+            if T_inside > t_target + t_range or not heating:
+                heating = False
+            if T_inside < t_target - t_range or heating:
+                heating = True
+            if not heating:
                 Q_dot_required[i] = 0.
                 Q_dot_supplied[i] = 0.
-        else:
-            if T_inside > t_target - t_range:
-                Q_dot_required[i] = 0.
-                Q_dot_supplied[i] = 0.'''
-        # co2 controller #   #   #   #   #   #   #   #   #   #   #
 
         Q_dot += Q_dot_supplied[i]
 
@@ -132,6 +132,10 @@ def simulate(df, hp_type, b_type, b_age, A, A_windows, n_floors=2, t_target=20.0
     else:
         ventilation_series = np.zeros_like(df["T_outside [°C]"])
 
+    controller = "default"
+    if "CO2 aware controller" in assumptions:
+        controller = "CO2 aware controller"
+
     df["P_solar [kW]"] = float(A_windows) / 4 * (
                 df["p_solar south [kW/m2]"] + df["p_solar east [kW/m2]"] + df["p_solar west [kW/m2]"])
     df["Q_dot_solar [kW]"] = df["P_solar [kW]"] * gwerte.loc[
@@ -149,7 +153,7 @@ def simulate(df, hp_type, b_type, b_age, A, A_windows, n_floors=2, t_target=20.0
                                                                               ventilation_series,
                                                                               df["Intensity [g CO2eq/kWh]"].to_numpy(),
                                                                               df['Q_dot_supplied [kW]'].to_numpy(),
-                                                                              Q_dot_H_design, t_target, UA, C)
+                                                                              Q_dot_H_design, t_target, UA, C, controller)
     df["Q_H [kJ]"] = Q_H
     df["Q_dot_loss [kW]"] = Q_dot_loss
     df["Q_dot_ventilation [kW]"] = Q_dot_vent
