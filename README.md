@@ -61,3 +61,21 @@ Annahme: - 95% von allem elektrischen Verbrauch wird als waerme im Gebaeude frei
 - Wir verwenden den Wert von Ullis Haus runtergerechnet auf die Wohnflaeche. Faktoren fur spezifische Wearmekapazitaet (from 140 to 315 kJ m-2 K-1) aus https://www.sciencedirect.com/science/article/pii/S2214509522005551
 
 We simulate closing the blinds when it is too hot, ventilation losses, losses through walls, windows etc., solar radiation gains, gains through electrical appliances and habitants.
+
+## CO2 controller
+
+The controller tries to minimize CO2 emissions, by heating when electricity is less CO2 intensive. It is based on the single household model, described in [Paper](https://doi.org/10.1016/j.jclepro.2021.128926) but was extended to use a variable optimization period. Initially we thought the metric to optimize for was `g CO2eq/kWh` of the current electricity mix, but we soon realized, that the temperature dependent COP of the heat pump also has to be taken into consideration. We actually want to heat when `g CO2eq/kWh heating` is minimal. This metric takes into account both the temperature dependent COP and the CO2 intensity of the electricity mix.
+
+Initially we used time window of 48h for computation. We estimate the heat demand during that time interval based on a temperature and usage forecast, which we simulate by adding 10% uniform random noise to the true temperature and usage profiles. Using a fixed time window of 48h the controller produced strong temperature oscillations in the winter, since in extreme cases it would heat for a day (e.g. a windy day, when the electricity is clean) and turn off the other day. In old buildings with poor isolation, this caused temperature deviations of up to +-4 °C from the target temperature, since the cooling rate was simply too high to allow for such a long heating pause.  
+
+![](docs/fixed_24hperiod.png)
+(3681.5 kg CO2eq total emissions)
+
+We therefore introduced an extension to the base control strategy, that allows to choose a minimum and maximum temperature, from which a time window for optimization is computed. The window is simply determined by the time it takes for the building to get colder or hotter than the minimum temperature naturally. Thereby we ensure, that even in the most extreme cases (no heating for the entire period) the temperature deviation is limited. The controller is now able to produce a much more stable temperature profile, while still optimizing for CO2 emissions. An added benefit is, that it can now also use longer periods for optimization if the house has a sufficient heat capacity to isolation ratio or when the outside temperature is close to target temperature anyway.
+
+![](docs/variable_24hperiod.png)
+Note that the temperature deviation is now limited to approximately +-1 °C from the target temperature. Variations outside of this range are due to the imperfect weather forecast (4482.2 kg CO2eq total emissions)
+
+Of course a larger temperature variation allows for lower CO2 emissions, since the controller has more freedom to choose when to heat. The following plot shows the CO2 emissions for different allowed temperature variations.
+
+![](docs/CO2overVariation.png)

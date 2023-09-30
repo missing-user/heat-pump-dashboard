@@ -73,7 +73,7 @@ def simulate_np(P_internal: np.ndarray, T_outside_series: np.ndarray,
             min_heat = C*(-t_range)/3600.
             
             # How long to choose the optimization period?
-            for t in range(4*24): # Max optimization range 4 days
+            for t in range(3*24): # Max optimization range 4 days
                 future_t = i+t
                 if future_t >= len(T_outside_forecast):
                     break
