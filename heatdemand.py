@@ -22,12 +22,12 @@ def get_heatpump_Q_dot(t_current, t_target, Q_dot_H_design):
 
 
 def simulate_np(P_internal: np.ndarray, T_outside_series: np.ndarray,
-                ventilation: np.ndarray, intensity_series: np.ndarray, Q_dot_supplied: np.ndarray,
-                Q_dot_H_design: float, t_target: float, t_range:float,
+                ventilation: np.ndarray, intensity_series: np.ndarray, 
+                Q_dot_supplied: np.ndarray,
+                t_target: float, t_range:float,
                 UA: float, C: float, controller:str):
     timestep = 3600.0  # h
     co2_threshold = intensity_series.mean()
-    print(co2_threshold)
 
     Q_dot_loss = np.zeros_like(T_outside_series)
     Q_dot_ventilation = np.zeros_like(T_outside_series)
@@ -63,7 +63,7 @@ def simulate_np(P_internal: np.ndarray, T_outside_series: np.ndarray,
 
 
         # co2 controller #   #   #   #   #   #   #   #   #   #   #
-        if controller is "CO2 aware controller":
+        if controller == "CO2 aware controller":
             if intensity_series[i] < co2_threshold:
                 if T_inside > t_target + t_range:
                     # TODO: dynamic threshold for optimal CO2 usage
@@ -72,26 +72,41 @@ def simulate_np(P_internal: np.ndarray, T_outside_series: np.ndarray,
                 if T_inside > t_target - t_range:
                     Q_dot_supplied[i] = 0.
         # co2 controller #   #   #   #   #   #   #   #   #   #   #
-        elif controller is "CO2 single threshold controller":
-            # Required heat for the next 24 hours
-            future_t = i+24
-            predicted_heat_demand = ((T_outside_series[i:future_t] - T_inside) * (UA + ventilation[i:future_t]) + P_internal[i:future_t]).sum()
-            predicted_heat_demand += C*(t_target - T_inside)/3600 # kJ -> kW
-
-            # Maximize the heat supplied while minimizing CO2 emissions by testing all combinations of heating times
-            for j in range(24):
-                for k in range(24):
-                    pass
-
-            hours_heating_needed = 24*max(0, predicted_heat_demand/Q_dot_supplied[i:future_t].sum())
+        elif controller=="default" or controller == "CO2 single threshold controller":
+            # How long to choose the optimization period?
+            lower_heat = C*(t_target-T_inside)/3600.
+            max_heat = C*(t_range)/3600.
+            min_heat = C*(-t_range)/3600.
             
-            # Find the best time to heat based on 
-            last_idx = int(min(len(intensity_series[i:future_t])-1, np.ceil(hours_heating_needed)))
-            best_times = np.argpartition(intensity_series[i:future_t], last_idx)
-            best_times = best_times[:last_idx]
-            print(hours_heating_needed, best_times)
+            for t in range(4*24): # Max optimization range 4 days
+                future_t = i+t
+                if future_t >= len(T_outside_series):
+                    break
 
-            if len(best_times)==0 or best_times[0] != 0:
+                heat_loss_now = (t_target - T_outside_series[future_t]) * (UA + ventilation[future_t])
+                heat_loss_now -= P_internal[future_t]
+
+                lower_heat += heat_loss_now
+
+                period = t
+                if lower_heat < min_heat or lower_heat > max_heat:
+                    break
+            
+            period = max(1, period) # at least 1 hour
+
+            # Required heat for the next 24 hours
+            future_t = i+period 
+            predicted_heat_demand = ((t_target - T_outside_series[i:future_t]) * (UA + ventilation[i:future_t])).sum() # kWh
+            predicted_heat_demand -= P_internal[i:future_t].sum() # kWh
+            predicted_heat_demand += C*(t_target-T_inside)/3600. # apparently also kWh, i thought it was kJ
+
+            # Find the best time to heat
+            best_times = np.argsort(intensity_series[i:future_t])
+            predicted_heating = np.cumsum(Q_dot_supplied[i:future_t][best_times])
+
+            # If the predicted heat demand is higher than the predicted heat supply, heat
+            now_idx = np.where(best_times == 0)[0][0]
+            if predicted_heating[now_idx] >= predicted_heat_demand:
                 Q_dot_supplied[i] = 0.
         # simple controller #   #   #   #   #   #   #   #   #   #   #
         else:
@@ -137,7 +152,6 @@ def calc_U(b_age, A_windows, A, n_floors, h_floor=3):
 
 
 def simulate(df, hp_type, b_type, b_age, A, A_windows, n_floors=2, t_target=20.0, t_range=1., assumptions=[]):
-    Q_dot_H_design = heat_pump_size(b_type, b_age, A)
     UA = calc_U(b_age, A_windows, A, n_floors)
     specific_heat_capa = cwerte.loc[b_age, "Heatcapacity [kJ/m3K]"]
 
@@ -170,12 +184,16 @@ def simulate(df, hp_type, b_type, b_age, A, A_windows, n_floors=2, t_target=20.0
     P_internal = (df["P_el appliances [kW]"] + df["Q_dot_solar [kW]"]).to_numpy()
     df = heatings.simulate_hp(df, model=hp_type, system=heating_system, age=b_age)
 
-    Q_H, Q_dot_loss, Q_dot_vent, Q_dot_supplied, Q_dot_transferred, Q_dot_demand, Q_dot_idealized, T_inside_ideal = simulate_np(P_internal,
-                                                                              df["T_outside [°C]"].to_numpy(),
-                                                                              ventilation_series,
-                                                                              df["Intensity [g CO2eq/kWh]"].to_numpy(),
-                                                                              df['Q_dot_supplied [kW]'].to_numpy(),
-                                                                              Q_dot_H_design, t_target, t_range, UA, C, controller)
+    df["Intensity per heat [g CO2eq/kWh]"] = df["Intensity [g CO2eq/kWh]"] / df["COP heatpump"]
+
+    Q_H, Q_dot_loss, Q_dot_vent, Q_dot_supplied, \
+    Q_dot_transferred, Q_dot_demand, Q_dot_idealized, \
+    T_inside_ideal = simulate_np(P_internal,
+                        df["T_outside [°C]"].to_numpy(),
+                        ventilation_series,
+                        df["Intensity per heat [g CO2eq/kWh]"].to_numpy(),
+                        df['Q_dot_supplied [kW]'].to_numpy(),
+                        t_target, t_range, UA, C, controller)
     df["Q_H [kJ]"] = Q_H
     df["Q_dot_loss [kW]"] = Q_dot_loss
     df["Q_dot_ventilation [kW]"] = Q_dot_vent
