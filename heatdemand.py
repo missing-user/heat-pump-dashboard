@@ -27,7 +27,6 @@ def simulate_np(P_internal: np.ndarray, T_outside_series: np.ndarray,
                 t_target: float, t_range:float,
                 UA: float, C: float, controller:str):
     timestep = 3600.0  # h
-    co2_threshold = intensity_series.mean()
 
     Q_dot_loss = np.zeros_like(T_outside_series)
     Q_dot_ventilation = np.zeros_like(T_outside_series)
@@ -41,6 +40,10 @@ def simulate_np(P_internal: np.ndarray, T_outside_series: np.ndarray,
     Q_H[0] = t_target * C  # initial temperature
     Q_H_idealized[0] = t_target * C
     heating = False
+
+    uncertainty = (controller == r"CO2 aware controller with 10% forecast uncertainty")
+    T_outside_forecast = T_outside_series * np.random.uniform(0.9, 1.1, len(T_outside_series))
+
     for i in range(len(T_outside_series) - 1):
         T_inside = Q_H[i] / C
         T_inside_ideal[i] = Q_H_idealized[i] / C
@@ -63,7 +66,7 @@ def simulate_np(P_internal: np.ndarray, T_outside_series: np.ndarray,
 
 
         # co2 controller #   #   #   #   #   #   #   #   #   #   #
-        if controller == "CO2 aware controller":
+        if controller == "CO2 aware controller" or controller == r"CO2 aware controller with 10% forecast uncertainty":
             # Required heat for the coming time period
             predicted_heat_demand = C*(t_target-T_inside)/3600.
             max_heat = C*(t_range)/3600.
@@ -72,29 +75,34 @@ def simulate_np(P_internal: np.ndarray, T_outside_series: np.ndarray,
             # How long to choose the optimization period?
             for t in range(4*24): # Max optimization range 4 days
                 future_t = i+t
-                if future_t >= len(T_outside_series):
+                if future_t >= len(T_outside_forecast):
                     break
 
-                heat_loss_now = (t_target - T_outside_series[future_t]) * (UA + ventilation[future_t])
-                heat_loss_now -= P_internal[future_t]
-
+                heat_loss_now = (t_target - T_outside_forecast[future_t]) * (UA + ventilation[future_t]) - P_internal[future_t]
+                
                 period = t
-                if predicted_heat_demand +heat_loss_now < min_heat or \
-                    predicted_heat_demand +heat_loss_now > max_heat:
+                if predicted_heat_demand + heat_loss_now < min_heat or \
+                    predicted_heat_demand + heat_loss_now > max_heat:
                     break
                 predicted_heat_demand += heat_loss_now
             
             period = max(1, period) # at least 1 hour
-
             future_t = i+period 
             
             # Find the best time to heat
-            best_times = np.argsort(intensity_series[i:future_t])
-            predicted_heating = np.cumsum(Q_dot_supplied[i:future_t][best_times])
+
+            if uncertainty:
+                intensity_prediction = intensity_series[i:future_t] * np.random.uniform(0.9, 1.1, period)
+                Q_dot_prediction = Q_dot_supplied[i:future_t] * np.random.uniform(0.9, 1.1, period)
+            else:
+                intensity_prediction = intensity_series[i:future_t]
+                Q_dot_prediction = Q_dot_supplied[i:future_t]
+            best_times = np.argsort(intensity_prediction)
+            predicted_Q_heating = np.cumsum(Q_dot_prediction[best_times])
 
             # If the predicted heat demand is higher than the predicted heat supply, heat
             now_idx = np.where(best_times == 0)[0][0]
-            if predicted_heating[now_idx] >= predicted_heat_demand:
+            if predicted_Q_heating[now_idx] >= predicted_heat_demand:
                 Q_dot_supplied[i] = 0.
         # simple controller #   #   #   #   #   #   #   #   #   #   #
         else:
@@ -154,6 +162,8 @@ def simulate(df, hp_type, b_type, b_age, A, A_windows, n_floors=2, t_target=20.0
     controller = "default"
     if "CO2 aware controller" in assumptions:
         controller = "CO2 aware controller"
+        if r"10% forecast uncertainty" in assumptions:
+            controller += r" with 10% forecast uncertainty"
 
     heating_system = "conventional"
     if "Floor heating" in assumptions:

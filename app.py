@@ -78,7 +78,8 @@ app.layout = html.Div([
                             "Ventilation heat losses", 
                             "Time dependent electricity mix",
                             "CO2 aware controller",
-                            "Floor heating"],className="advanced"),
+                            r"10% forecast uncertainty",
+                            "Floor heating",],className="advanced"),
 
         html.Label("Modify electricity mix", className="advanced"),
         dcc.Dropdown(id="electricity-source", multi=False,value=[],persistence=True,className="advanced"),
