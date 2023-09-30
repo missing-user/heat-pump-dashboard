@@ -90,7 +90,7 @@ def draw_plot3(df_json):
     df = pd.DataFrame(df_json["data-frame"]["data"], df_json["data-frame"]["index"],
                       df_json["data-frame"]["columns"]).set_index("index")
 
-    marks = df['heat pump emissions [kg CO2eq]'].rolling(7*24).mean() > df['Gas heating emissions [kg CO2eq]'].rolling(7*24).mean()
+    marks = df['heat pump emissions [kg CO2eq]'].rolling(7*24, center=True).mean() > df['Gas heating emissions [kg CO2eq]'].rolling(7*24).mean()
     marks = marks.loc[marks.diff() != 0]
 
     fig3 = px.line(df, y=['Oil heating emissions [kg CO2eq]',
