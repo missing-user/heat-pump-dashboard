@@ -64,20 +64,12 @@ def simulate_np(P_internal: np.ndarray, T_outside_series: np.ndarray,
 
         # co2 controller #   #   #   #   #   #   #   #   #   #   #
         if controller == "CO2 aware controller":
-            if intensity_series[i] < co2_threshold:
-                if T_inside > t_target + t_range:
-                    # TODO: dynamic threshold for optimal CO2 usage
-                    Q_dot_supplied[i] = 0.
-            else:
-                if T_inside > t_target - t_range:
-                    Q_dot_supplied[i] = 0.
-        # co2 controller #   #   #   #   #   #   #   #   #   #   #
-        elif controller=="default" or controller == "CO2 single threshold controller":
-            # How long to choose the optimization period?
-            lower_heat = C*(t_target-T_inside)/3600.
+            # Required heat for the coming time period
+            predicted_heat_demand = C*(t_target-T_inside)/3600.
             max_heat = C*(t_range)/3600.
             min_heat = C*(-t_range)/3600.
             
+            # How long to choose the optimization period?
             for t in range(4*24): # Max optimization range 4 days
                 future_t = i+t
                 if future_t >= len(T_outside_series):
@@ -86,20 +78,16 @@ def simulate_np(P_internal: np.ndarray, T_outside_series: np.ndarray,
                 heat_loss_now = (t_target - T_outside_series[future_t]) * (UA + ventilation[future_t])
                 heat_loss_now -= P_internal[future_t]
 
-                lower_heat += heat_loss_now
-
                 period = t
-                if lower_heat < min_heat or lower_heat > max_heat:
+                if predicted_heat_demand +heat_loss_now < min_heat or \
+                    predicted_heat_demand +heat_loss_now > max_heat:
                     break
+                predicted_heat_demand += heat_loss_now
             
             period = max(1, period) # at least 1 hour
 
-            # Required heat for the next 24 hours
             future_t = i+period 
-            predicted_heat_demand = ((t_target - T_outside_series[i:future_t]) * (UA + ventilation[i:future_t])).sum() # kWh
-            predicted_heat_demand -= P_internal[i:future_t].sum() # kWh
-            predicted_heat_demand += C*(t_target-T_inside)/3600. # apparently also kWh, i thought it was kJ
-
+            
             # Find the best time to heat
             best_times = np.argsort(intensity_series[i:future_t])
             predicted_heating = np.cumsum(Q_dot_supplied[i:future_t][best_times])
@@ -116,7 +104,6 @@ def simulate_np(P_internal: np.ndarray, T_outside_series: np.ndarray,
                 heating = True
             if not heating:
                 Q_dot_supplied[i] = 0.
-
 
         Q_dot += Q_dot_supplied[i]
 

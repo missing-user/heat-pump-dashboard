@@ -66,7 +66,7 @@ app.layout = html.Div([
         html.Label("Target temperature (°C)",className="advanced"),
         dcc.Slider(id="target-temp-slider", min=15, max=25, value=20, persistence=True,className="advanced"),
 
-        html.Label("Comfort temperature range (+-) (°C)",className="advanced"),
+        html.Label("Comfort temperature range (±°C)",className="advanced"),
         dcc.Slider(id="target-temp-range-slider", min=0, max=5, value=1, persistence=True,className="advanced"),
         
         html.Label('Heat pump model',className="advanced"),
@@ -220,4 +220,4 @@ def update_dashboard(df_json,
 
 
 if __name__ == '__main__':
-    app.run_server(debug=False, host="0.0.0.0", port=8050)
+    app.run_server(debug=True)
