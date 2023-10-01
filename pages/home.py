@@ -70,8 +70,7 @@ layout = [
         html.Li([html.B("Energy Consumption Analysis:"), " Breakdown energy consumption associated with heat pump operation. Visualize how much energy their heat pump consumes over one year."]),
         html.Li([html.B("CO2 Emissions Estimation:"), " By considering the energy consumption data and the selected geographical location, the tool calculates the CO2 emissions produced by the heat pump's operation. It takes into account factors such as electricity source (renewable, fossil fuels), heating demand, and the overall energy efficiency of the heat pump."]),
         html.Li([html.B("Comparison:"), " Compare emissions of different standard heating systems (oil, gas, and pellets) to a heat pump system."]),
-        html.Li([html.B("Categorization:"), " Results are compared to average values for German households."]),
-        html.Li(html.B("Ad supported"))
+        html.Li([html.B("Categorization:"), " Results are compared to average values for German households."])
     ])
     ]),
 
@@ -87,12 +86,11 @@ layout = [
         html.Li(["Set heat gains"]),
         html.Li(["Set electrical energy mix"]),
         html.Li(["Set heating control strategy"]),
-        html.Li(["Unlimited selection of >6000 heat pump models"]),
-        html.Li(html.B("No ads"))
+        html.Li(["Unlimited selection of >6000 heat pump models"])
     ])
     ]),
               
-    html.A("Free",href="./captcha", className="button"),
+    html.A("Free",href="./limited", className="button"),
     html.A("Premium (Only 49.99 $/month)",href="./academic", className="button button-primary"),
   ], className="grid-container halves"),
   html.Div(style={"height":"20em"})
