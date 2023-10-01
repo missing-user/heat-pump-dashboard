@@ -4,7 +4,7 @@ from datetime import datetime
 import temperatures
 import co2intensity
 import solar_heat
-
+import os
 import requests
 from joblib import Memory
 memory = Memory("cache", verbose=0)
