@@ -13,7 +13,7 @@ dash-core-components==2.0.0
 dash-dangerously-set-inner-html==0.0.2
 dash-html-components==2.0.0
 dash-table==5.0.0
-debugpy==1.8.0
+debugpy
 decorator==5.1.1
 executing==1.2.0
 fastjsonschema==2.18.0
