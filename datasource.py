@@ -42,7 +42,6 @@ def fetch_all(country_code, zip_code, start, end, TRY_dataset=None):
       end = datetime.fromisoformat(end)
 
   tmpdf = co2intensity.load_all()
-  
   lat, lon = geopos_from_zipcode(country_code, zip_code)
   
   if isinstance(TRY_dataset, str):
@@ -52,7 +51,6 @@ def fetch_all(country_code, zip_code, start, end, TRY_dataset=None):
     delta = pd.Timedelta(delta.year, 1, 1)
   else: 
     df = temperatures.fetch_all(lat, lon, start, end)
-
     df_sol = solar_heat.fetch_all(lat, lon, start, end)
     df["p_solar south [kW/m2]"] = df_sol["p_solar south [kW/m2]"]
     df["p_solar east [kW/m2]"] = df_sol["p_solar east [kW/m2]"]

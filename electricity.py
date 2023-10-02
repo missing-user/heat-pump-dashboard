@@ -3,10 +3,12 @@ import glob
 import datetime
 
 def list_readable_electricity_profiles():
-  return [elm.replace("data/heatingload/electric/synPRO_el_","") for elm in list_electricity_profiles()]
+  return [elm.replace("data/heatingload/electric/synPRO_el_","")[:-4] for elm in list_electricity_profiles()]
 
 def list_electricity_profiles():
   return glob.glob("data/heatingload/electric/synPRO_el_*.dat")
+
+name_to_file = {path.replace("data/heatingload/electric/synPRO_el_","")[:-4] : path for path in glob.glob("data/heatingload/electric/synPRO_el_*.dat")}
 
 def load_el_profile(df:pd.DataFrame, path):
   df_el = pd.read_csv(path, comment="#", sep=";").rename(columns={"P_el":"P_el appliances [kW]"}).drop(columns=["YYYYMMDD", "hhmmss"])

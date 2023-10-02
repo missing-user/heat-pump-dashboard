@@ -189,7 +189,6 @@ def update_dashboard(df_json,
             for energy_type in df_copy.columns:
                 if (intensity_df["Emissions [g CO2eq/kWh]"] == energy_type.replace( "[%]","[MWh] Calculated resolutions")).any():
                     intensity_name = energy_type
-                    #df_copy[intensity_name] = df_copy[energy_type] / df_copy["MWh sum"] * 100
                     df_copy["Intensity [g CO2eq/kWh]"] += df_copy[intensity_name] * 1e-2 * intensity_lookup.loc[
                         energy_type.replace("[%]","[MWh] Calculated resolutions"), "Med"]
             pass

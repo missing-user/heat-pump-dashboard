@@ -76,11 +76,11 @@ def simulate_hp_inverse(df, model='Bosch Compress 3000 AWS-8 B'):
     for t in t_amb:
         t_ambs.extend([t]*t_in_secondary_length)
         t_secondarys.extend(t_in_secondary)
-    df_lookup = pd.DataFrame({'T_amb': t_ambs, 'T_in_secondary': t_secondarys})
+    df_lookup = pd.DataFrame({'T_amb': t_ambs, 'T_in_secondary [°C]': t_secondarys})
 
     # calculate/simulate with values from lookuptable
     start = time.time()
-    results = heatpump.simulate(t_in_primary=df_lookup['T_amb'].values, t_in_secondary=df_lookup['T_in_secondary'].values, t_amb=df_lookup['T_amb'].values, mode=1)
+    results = heatpump.simulate(t_in_primary=df_lookup['T_amb'].values, t_in_secondary=df_lookup['T_in_secondary [°C]'].values, t_amb=df_lookup['T_amb'].values, mode=1)
     # TODO:
     #  pick best t_vl/P_el/Q_h
     #  add values to DataFrame
@@ -108,22 +108,22 @@ def simulate_hp(df,model,system, age):
     heatpump = hpl.HeatPump(parameters)
 
     if system == "Floor heating":
-        print('floor')
         # pick floor heating vorlauf temperatures
         t_vorlauf = t_vorlauf_floor
+        print('floor heating active, vorlauf T:\n', t_vorlauf)
     else:
-        print('conventional')
         t_vorlauf = t_vorlauf_conventional[t_vorlauf_conventional['building_year']==age]
+        print('conventional heating active, vorlauf T:\n', t_vorlauf)
 
 
     vorlauf_interpfunc = interp1d(t_vorlauf['t_amb [°C]'], t_vorlauf['t_vl [°C]'], kind='linear')
 
     df['T_vorlauf [°C]'] = vorlauf_interpfunc(df['T_outside [°C]'])
-    df['T_in_secondary'] = df['T_vorlauf [°C]'] - 5.
+    df['T_in_secondary [°C]'] = df['T_vorlauf [°C]'] - 5.
 
     if model != 'Carnot':
         results = heatpump.simulate(t_in_primary=df['T_outside [°C]'].values,
-                                t_in_secondary=df['T_in_secondary'].values, t_amb=df['T_outside [°C]'   ].values,
+                                t_in_secondary=df['T_in_secondary [°C]'].values, t_amb=df['T_outside [°C]'   ].values,
                                 mode=1)
         results_df = pd.DataFrame(results)
         df.loc[:,'COP heatpump'] = results_df['COP'].values
