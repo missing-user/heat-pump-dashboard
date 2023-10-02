@@ -13,6 +13,7 @@ import plotly.express as px
 
 
 # Inputs
+st.set_page_config(layout="wide")
 st.title("Heat Pump Simulation")
 st.sidebar.title("User Inputs")
 
@@ -122,7 +123,7 @@ def customizable_plot(defaults=["T_outside [°C]", "T_house [°C]"]):
         if len(y_unit)>0:
             fig.update_yaxes(title_text=f'value [{y_unit[0]}]')
             fig.update_xaxes(title_text=f'Date')
-    st.plotly_chart(fig)
+    st.plotly_chart(fig, use_container_width=True)
     return fig
 
 customizable_plot()
@@ -141,4 +142,4 @@ for i in range(min(len(marks) - 1, 30)): # Excessive number of vrects kills perf
     if marks.iat[i] > 0:
         fig3.add_vrect(x0=marks.index[i], x1=marks.index[i + 1], fillcolor="red", 
                        opacity=0.25, layer="below", line_width=0)
-st.plotly_chart(fig3)
+st.plotly_chart(fig3, use_container_width=True)
