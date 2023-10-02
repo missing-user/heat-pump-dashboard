@@ -17,6 +17,7 @@ pio.templates.default = "plotly_white"
 
 # Initialize the Dash app
 app = dash.Dash(__name__, use_pages=True)
+server = app.server
 
 # Define the layout of the app
 app.layout = html.Div([
