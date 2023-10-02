@@ -18,6 +18,7 @@ decorator==5.1.1
 executing==1.2.0
 fastjsonschema==2.18.0
 Flask==2.2.5
+gunicorn==21.2.0
 idna==3.4
 ipykernel==6.25.2
 ipython==8.15.0
