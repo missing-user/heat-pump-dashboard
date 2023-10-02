@@ -42,6 +42,7 @@ packaging==23.1
 pandas==2.1.1
 parso==0.8.3
 pexpect==4.8.0
+pgeocode==0.4.1
 pickleshare==0.7.5
 platformdirs==3.10.0
 plotly==5.17.0
