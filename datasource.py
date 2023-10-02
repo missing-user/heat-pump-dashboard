@@ -4,6 +4,7 @@ from datetime import datetime
 import temperatures
 import co2intensity
 import solar_heat
+import pgeocode
 import os
 import requests
 from joblib import Memory
@@ -11,12 +12,11 @@ memory = Memory("cache", verbose=0)
 
 @memory.cache
 def geopos_from_zipcode(country_code, zip_code):
-  API_KEY = os.environ.get("OPENWEATHER_API_KEY")
-  URL = f"https://api.openweathermap.org/geo/1.0/zip?zip={zip_code},{country_code}&appid={API_KEY}"
-  response =  requests.get(URL)
-  json = response.json()
-  if "lat" in json and "lon" in json:
-    return json["lat"], json["lon"]
+  nomi = pgeocode.Nominatim(country_code)
+  response_df = nomi.query_postal_code(str(zip_code))
+
+  if not response_df.empty:
+    return response_df["latitude"], response_df["longitude"]
   return None, None
 
 def load_TRY(selection:str):
