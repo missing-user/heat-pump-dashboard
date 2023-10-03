@@ -7,7 +7,8 @@ With the expansion of renewable electricity sources, heat pumps have the potenti
 
 
 ## Model Description
-We model the building as an open thermodynamic system in a heat bath (outside environment). The entire building is assigned a single temperature, so like a homogeneous block in a perfectly equilibrated steady state. The building is parametrized by its heat capacity $C$, volume $V$, the specific heat transfer coefficients of its different surfaces $U_i$, the surface area of walls $A_{walls}$, roof $A_{roof}$, floor $A_{floor}$ and lastly windows $A_{windows}$. If solar radiation is simulated, the windows are assigned a value $g_{window}$ depending on the building age, which specifies the transmittance of vertical radiation through glass. This is lower for more modern, multi layer windows and higher for older windows [Richtwerte finden sich in DIN 4108-4 als Gesamtenergiedurchlassgrade bei senkrechtem Strahlungseinfall](https://www.baunormenlexikon.de/norm/din-4108-4/c71c3881-b7fc-47d4-8992-2b1e8609dc03). All the surface areas are computed from the living area input by the user, evenly split among the given number of floors by assuming  $3 m$ height per floor and a flat, square roof and base of the building.
+We model the building as an open thermodynamic system in a heat bath (outside environment). The entire building is assigned a single temperature, so like a homogeneous block in a perfectly equilibrated steady state. The building is parametrized by its heat capacity $C$, volume $V$, the specific heat transfer coefficients of its different surfaces $U_i$, the surface area of walls $A_{walls}$, roof $A_{roof}$, floor $A_{floor}$ and lastly windows $A_{windows}$. Specific heat capacities were taken from [this paper on the role of specific heat capacity on building energy performance and thermal discomfort](https://www.sciencedirect.com/science/article/pii/S2214509522005551) and interpolated manually for different building ages. The specific U values mapped to building age, according to the classes specified in [Gebäudeenergiegesetz (GEG), Anlage 1](https://www.wienerberger.de/content/dam/wienerberger/germany/marketing/documents-magazines/instructions-guidelines/wall/DE_MKT_DOC_PON_Schnelluebersicht_GEG_KfW_Wienerberger.pdf).
+If solar radiation is simulated, the windows are assigned a value $g_{window}$ depending on the building age, which specifies the transmittance of vertical radiation through glass. This is lower for more modern, multi layer windows and higher for older, single layer windows [Richtwerte finden sich in DIN 4108-4 als Gesamtenergiedurchlassgrade bei senkrechtem Strahlungseinfall](https://www.baunormenlexikon.de/norm/din-4108-4/c71c3881-b7fc-47d4-8992-2b1e8609dc03). All the surface areas are computed from the living area input by the user, evenly split among the given number of floors by assuming  $3 m$ height per floor and a flat, square roof and base of the building.
 
 The transfer due to the temperature gradient to the outside at a given timestep is then: 
 
@@ -27,18 +28,6 @@ $
 Finally, the temperature in the house is defined as $T_{house} = \frac{Q}{C}$. The ODE is integrated with a simple explicit Euler integrator with a step size of $1 h$, which is the time resolution at which we handle all the data.
 
 
-## Dashboard Overview
-### Simplified
-The simplified model is populated by a series of sensible defaults for all inputs, which are not exposed to the user. For example, we set the $A_{windows}$ to $20\%$ of the living area, activate all available model assumptions except for weather forecast uncertainty and set the simulation range from 1. January to 31. December of the selected year. Based on $W/m^2$ heating requirement values from DIN EN 12831-1 we filter the available list of heat pump models and select a suitably sized pump automatically. The electricity mix is by default the true, historic electricity generation mix of the time period, as downloaded from [SMARD](https://www.smard.de/en/downloadcenter/download-market-data/), a service offered by the Bundesnetzagentur. If no electricity data is available for the selected year, we repeat the closest available year periodically to fill the entire timeseries. 
-
-![Initial version of the simplified Dashboard produced during Ferienakademie has a limited number of simple user inputs, but still presents a lot of information](docs/limitedScreenshot.png)
-![Improvements after Ferienakademie reduce visual clutter. We limited the dashboard to only display four KPIs and a single plot.](docs/simple_dashboard.png)
-
-### Academic 
-The academic Dashboard version is intended for deeper exploration of the data. We tried to expose as much control over the simulation parameters as possible, including some model assumptions. Particularly the electricity mix input is valuable for testing hypothetical scenarios, e.g. different expansions of renewable energies in as part of the energy mix. 
-![The initial version of the academic Dashboard was entirely seperate and only shared the base layout and some of the controls.](docs/academicScreenshot.png)
-![Expanding the "Advanced Settings" and "Detailed Metrics" tabs now reveals additional information. plot customization options are now directly above the respective plot instead of the sidebar. All information from the base UI is still available at the top.](docs/advanced_dashboard.png)
-
 | Column   |      Unit     | Description| 
 |----------|:----------------:|:----------:|
 | p_solar (south/east/west) | $kW/m^2$ | Specific solar radiation strength for a vertical surface facing south/west/east respectively. This already includes corrective factors from literature for average shading, non-perpendicular radiation and self shadowing due to the window frame. |
@@ -54,6 +43,21 @@ The academic Dashboard version is intended for deeper exploration of the data. W
 | Q_dot_supplied | $kW$ | Actual amount of heat supplied to the building by the heat pump. May be less than Q_dot_demand if the heat pump is chosen too small |
 | Q_dot_transferred | $kW$ | Heat transfer to the outside of the building through walls, windows, ceiling and floor. |
 | Q_dot_ventilation | $kW$ | Heat transfer due to periodic ventilation of the building. We assume that $35\%$ of the air volume in the building are replaced per hour ([According to Standard 62.2-2016 - Ventilation and Acceptable Indoor Air Quality in Residential Buildings](https://www.ashrae.org/technical-resources/bookstore/standards-62-1-62-2)). |
+
+### Heat pump model
+Vorlauf temperatur, wärmepumpenmodelle
+
+## Dashboard Overview
+### Simplified
+The simplified model is populated by a series of sensible defaults for all inputs, which are not exposed to the user. For example, we set the $A_{windows}$ to $20\%$ of the living area, activate all available model assumptions except for weather forecast uncertainty and set the simulation range from 1. January to 31. December of the selected year. Based on $W/m^2$ heating requirement values from DIN EN 12831-1 we filter the available list of heat pump models and select a suitably sized pump automatically. The electricity mix is by default the true, historic electricity generation mix of the time period, as downloaded from [SMARD](https://www.smard.de/en/downloadcenter/download-market-data/), a service offered by the Bundesnetzagentur. If no electricity data is available for the selected year, we repeat the closest available year periodically to fill the entire timeseries. 
+
+![Initial version of the simplified Dashboard produced during Ferienakademie has a limited number of simple user inputs, but still presents a lot of information](docs/limitedScreenshot.png)
+![Improvements after Ferienakademie reduce visual clutter. We limited the dashboard to only display four KPIs and a single plot.](docs/simple_dashboard.png)
+
+### Academic 
+The academic Dashboard version is intended for deeper exploration of the data. We tried to expose as much control over the simulation parameters as possible, including some model assumptions. Particularly the electricity mix input is valuable for testing hypothetical scenarios, e.g. different expansions of renewable energies in as part of the energy mix. 
+![The initial version of the academic Dashboard was entirely seperate and only shared the base layout and some of the controls.](docs/academicScreenshot.png)
+![Expanding the "Advanced Settings" and "Detailed Metrics" tabs now reveals additional information. plot customization options are now directly above the respective plot instead of the sidebar. All information from the base UI is still available at the top.](docs/advanced_dashboard.png)
 
 ## CO2 controller
 
@@ -92,7 +96,5 @@ Berater: 55000 kWh Waermebedarf
 Electricity stats for Germany: https://www.smard.de/en/downloadcenter/download-market-data/?downloadAttributes=%7B%22selectedCategory%22:1,%22selectedSubCategory%22:1,%22selectedRegion%22:false,%22selectedFileType%22:%22CSV%22,%22from%22:1514761200000,%22to%22:1672613999999%7D
 
 
-Annahme: - 95% von allem elektrischen Verbrauch wird als waerme im Gebaeude frei.
-- Sonneneinstrahlung durch die Fenster wird ebenfalls als Waerme gewertet. Fenster sind 1/3 Ost, 1/3 West 1/3 Sud (Einerseits nehmen wir keine Nord Fenster an, andererseits werden auch Dachfenster als vertikale Fenster gewertet und Uebertragungen durch Dach und Waende vernachlassigt)
 - Wohnflaeche zu Wand+Dachflaeche ist etwa Faktor 3 (Faustregel und Bestaetigt anhand von Ullis Haus Werten)
 - Wir verwenden den Wert von Ullis Haus runtergerechnet auf die Wohnflaeche. Faktoren fur spezifische Wearmekapazitaet (from 140 to 315 kJ m-2 K-1) aus https://www.sciencedirect.com/science/article/pii/S2214509522005551
