@@ -78,7 +78,7 @@ app.layout = html.Div([
                      options=["Close window blinds in summer", 
                             "Ventilation heat losses", 
                             "Time dependent electricity mix",
-                            "CO2 aware controller",
+                            "CO2-aware controller",
                             r"10% forecast uncertainty",
                             "Floor heating",],className="advanced"),
 
@@ -186,6 +186,7 @@ def update_dashboard(df_json,
 
             intensity_df = pd.read_csv("data/co2intensity/co2intensities.csv", sep=';')
             intensity_lookup = intensity_df.set_index("Emissions [g CO2eq/kWh]")
+            df_copy["Intensity [g CO2eq/kWh]"] = 0
             for energy_type in df_copy.columns:
                 if (intensity_df["Emissions [g CO2eq/kWh]"] == energy_type.replace( "[%]","[MWh] Calculated resolutions")).any():
                     intensity_name = energy_type

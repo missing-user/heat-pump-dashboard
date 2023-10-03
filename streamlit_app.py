@@ -45,8 +45,8 @@ with adv_sidebar:
     heatpump_model = st.selectbox("Heat Pump Model", hp_options, index=0)
     model_assumptions = st.multiselect(
         "Model Assumptions",
-        ["Close window blinds in summer", "Ventilation heat losses", "Time-dependent electricity mix", "CO2 aware controller", r"10% forecast uncertainty", "Floor heating"],
-        ["Close window blinds in summer", "Ventilation heat losses", "Time-dependent electricity mix", "CO2 aware controller", r"10% forecast uncertainty", "Floor heating"],
+        ["Close window blinds in summer", "Ventilation heat losses", "Time-dependent electricity mix", "CO2-aware controller", r"10% forecast uncertainty", "Floor heating"],
+        ["Close window blinds in summer", "Ventilation heat losses", "Time-dependent electricity mix", "CO2-aware controller", r"10% forecast uncertainty", "Floor heating"],
     )
 
 
@@ -55,7 +55,7 @@ with adv_sidebar:
 df = datasource.fetch_all("DE", zip_code, 
             datetime.datetime.fromisoformat(date_range[0].isoformat()), 
             datetime.datetime.fromisoformat(date_range[1].isoformat()))
-if not "Time dependent electricity mix" in model_assumptions:
+if not "Time-dependent electricity mix" in model_assumptions:
     df["Intensity [g CO2eq/kWh]"] = df["Intensity [g CO2eq/kWh]"].mean()
 
 # Electricity modification
@@ -79,6 +79,7 @@ df_copy[electricity_source] = df_copy[electricity_source].clip(lower=0, upper=10
 
 intensity_df = pd.read_csv("data/co2intensity/co2intensities.csv", sep=';')
 intensity_lookup = intensity_df.set_index("Emissions [g CO2eq/kWh]")
+df_copy["Intensity [g CO2eq/kWh]"] = 0
 for energy_type in df_copy.columns:
     if (intensity_df["Emissions [g CO2eq/kWh]"] == energy_type.replace( "[%]","[MWh] Calculated resolutions")).any():
         intensity_name = energy_type
@@ -109,7 +110,6 @@ selected_hp_power =  hp_lib_df.loc[hp_lib_df["Titel"] == heatpump_model,"Rated P
 spf = total_heat / total_electrical_energy_hp
 
 # Display total quantities using st.metric
-
 col1, col2, col3 = st.columns(3)
 with col1:
     st.metric("Total heat demand  [kWh]", millify(total_heat, 1))

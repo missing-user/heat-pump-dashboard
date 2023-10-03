@@ -41,7 +41,7 @@ def simulate_np(P_internal: np.ndarray, T_outside_series: np.ndarray,
     Q_H_idealized[0] = t_target * C
     heating = False
 
-    uncertainty = (controller == r"CO2 aware controller with 10% forecast uncertainty")
+    uncertainty = (controller == r"CO2-aware controller with 10% forecast uncertainty")
     T_outside_forecast = T_outside_series * np.random.uniform(0.9, 1.1, len(T_outside_series))
 
     for i in range(len(T_outside_series) - 1):
@@ -66,7 +66,7 @@ def simulate_np(P_internal: np.ndarray, T_outside_series: np.ndarray,
 
 
         # co2 controller #   #   #   #   #   #   #   #   #   #   #
-        if controller == "CO2 aware controller" or controller == r"CO2 aware controller with 10% forecast uncertainty":
+        if controller == "CO2-aware controller" or controller == r"CO2-aware controller with 10% forecast uncertainty":
             # Required heat for the coming time period
             predicted_heat_demand = C*(t_target-T_inside)/3600.
             max_heat = C*(t_range)/3600.
@@ -160,8 +160,8 @@ def simulate(df, hp_type, b_type, b_age, A, A_windows, n_floors=2, t_target=20.0
         ventilation_series = np.zeros_like(df["T_outside [°C]"])
 
     controller = "default"
-    if "CO2 aware controller" in assumptions:
-        controller = "CO2 aware controller"
+    if "CO2-aware controller" in assumptions:
+        controller = "CO2-aware controller"
         if r"10% forecast uncertainty" in assumptions:
             controller += r" with 10% forecast uncertainty"
 
