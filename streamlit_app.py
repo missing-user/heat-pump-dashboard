@@ -70,8 +70,7 @@ df_copy = df.copy()
 df_copy[electricity_source] = df_copy[electricity_source] * scaling
 total_percentage_to_distribute = 100 - df_copy[electricity_source]
 
-remaining_df = df_copy.filter(regex="[%]")
-remaining_df.drop(columns=electricity_source,inplace=True)
+remaining_df = df_copy.filter(regex="[%]").drop(columns=electricity_source)
 scaling_factor = total_percentage_to_distribute / (remaining_df.sum(axis=1))
 for col in remaining_df.columns:
     remaining_df[col] = remaining_df[col] * scaling_factor
@@ -134,11 +133,11 @@ def customizable_plot(defaults=["T_outside [°C]", "T_house [°C]"], default_sty
 # CO2 plot 
 marks = df['heat pump emissions [kg CO2eq]'].rolling(7*24, center=True).mean() > df['Gas heating emissions [kg CO2eq]'].rolling(7*24).mean()
 marks = marks.loc[marks.diff() != 0]
-fig3 = px.line(df.replace(0, np.nan), y=['Oil heating emissions [kg CO2eq]',
-                        'Gas heating emissions [kg CO2eq]',
-                        'heat pump emissions [kg CO2eq]'], 
+columns = ['Oil heating emissions [kg CO2eq]',
+            'Gas heating emissions [kg CO2eq]',
+            'heat pump emissions [kg CO2eq]']
+fig3 = px.line(df[columns].replace(0, np.nan), y=columns, 
                 title=("CO2 emissions" + ("" if len(marks)<=30 else " (could not display all marks)")))
-
 for i in range(min(len(marks) - 1, 30)): # Excessive number of vrects kills performance, limit to 30
     if marks.iat[i] > 0:
         fig3.add_vrect(x0=marks.index[i], x1=marks.index[i + 1], fillcolor="red", 
