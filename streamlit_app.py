@@ -10,7 +10,8 @@ import heatdemand as hd
 import hplib as hpl
 import re
 import plotly.express as px
-from millify import millify 
+import summaries
+import numpy as np
 
 # Inputs
 st.set_page_config(layout="wide")
@@ -46,7 +47,7 @@ with adv_sidebar:
     model_assumptions = st.multiselect(
         "Model Assumptions",
         ["Close window blinds in summer", "Ventilation heat losses", "Time-dependent electricity mix", "CO2-aware controller", r"10% forecast uncertainty", "Floor heating"],
-        ["Close window blinds in summer", "Ventilation heat losses", "Time-dependent electricity mix", "CO2-aware controller", r"10% forecast uncertainty", "Floor heating"],
+        ["Close window blinds in summer", "Ventilation heat losses", "Time-dependent electricity mix", "CO2-aware controller", "Floor heating"],
     )
 
 
@@ -98,30 +99,9 @@ df = heatings.gas_heating(df)
 df = heatings.oil_heating(df)
 df = heatings.pellet_heating(df)
 
-# Summary metrics
-# Compute total quantities
-df["heat pump emissions [kg CO2eq]"] = df["P_el heat pump [kW]"] * df["Intensity [g CO2eq/kWh]"] * 1e-3
-total_emission_hp = df["heat pump emissions [kg CO2eq]"].sum()
-total_emission_gas = df["Gas heating emissions [kg CO2eq]"].sum()
-total_emission_oil = df["Oil heating emissions [kg CO2eq]"].sum()
-total_heat = df['Q_dot_demand [kW]'].sum()
-total_electrical_energy_hp = df['P_el heat pump [kW]'].sum()
+# Generate summary statistics
 selected_hp_power =  hp_lib_df.loc[hp_lib_df["Titel"] == heatpump_model,"Rated Power low T [kW]"].iat[0]
-spf = total_heat / total_electrical_energy_hp
-
-# Display total quantities using st.metric
-col1, col2, col3 = st.columns(3)
-with col1:
-    st.metric("Total heat demand  [kWh]", millify(total_heat, 1))
-    st.metric("Total electrical energy (heat pump)  [kWh]", millify(total_electrical_energy_hp, 1))
-with col2:
-    st.metric("Heat pump power [kW]", millify(selected_hp_power, 1),
-              millify(selected_hp_power - requested_hp_power, 1), help="A green delta means the pump is larger than suggested, a red one smaller than suggested")
-    st.metric("Seasonal performance factor", millify(spf, 2))
-with col3:
-    st.metric("Total CO2 emissions (heat pump) [kg CO2eq]", millify(total_emission_hp, 1))
-    st.metric("Total CO2 emissions (oil heating) [kg CO2eq]", millify(total_emission_oil, 1), millify(total_emission_hp-total_emission_oil, 1))
-    st.metric("Total CO2 emissions (gas heating) [kg CO2eq]", millify(total_emission_gas, 1), millify(total_emission_hp-total_emission_gas, 1))
+summaries.generate_summaries(df, selected_hp_power, requested_hp_power, living_area)
 
 # Plotting
 widget_counter = 0
@@ -152,13 +132,15 @@ def customizable_plot(defaults=["T_outside [°C]", "T_house [°C]"], default_sty
     return fig
 
 customizable_plot()
-customizable_plot(list(df.filter(regex='[%]').columns), 2)
+#customizable_plot(list(df.filter(regex='[%]').columns), 2)
+customizable_plot(["P_el appliances [kW]", "Q_dot_solar [kW]",
+                   "Q_dot_ventilation [kW]","Q_dot_transferred [kW]", "Q_dot_supplied [kW]"], 1)
 
 # CO2 plot 
 marks = df['heat pump emissions [kg CO2eq]'].rolling(7*24, center=True).mean() > df['Gas heating emissions [kg CO2eq]'].rolling(7*24).mean()
 marks = marks.loc[marks.diff() != 0]
 
-fig3 = px.line(df, y=['Oil heating emissions [kg CO2eq]',
+fig3 = px.line(df.replace(0, np.nan), y=['Oil heating emissions [kg CO2eq]',
                         'Gas heating emissions [kg CO2eq]',
                         'heat pump emissions [kg CO2eq]'], 
                 title=("CO2 emissions" + ("" if len(marks)<=30 else " (could not display all marks)")))

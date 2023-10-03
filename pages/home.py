@@ -1,10 +1,7 @@
-import dash
-from dash import html, dcc
+import streamlit as st
 import plotly.graph_objects as go
-import dash_dangerously_set_inner_html
 
-dash.register_page(__name__, path='/')
-
+# Create a Sankey diagram
 fig = go.Figure(go.Sankey(
     arrangement = "snap",
     node = {
@@ -38,60 +35,51 @@ fig = go.Figure(go.Sankey(
                 5,4, # Heat demand
                 1,1,2,12,2,1,9,1,10],}))
 
+
 fig.update_layout(title_text="Heat Pump Simulation Components", font_size=14, height=500)
 
-layout = [
-  dash_dangerously_set_inner_html.DangerouslySetInnerHTML('''
-<style> .main-container {
-    grid-template-columns: 0 1fr;
-  }
-  .input-container{
-  visibility: collapse;
-  display: none !important;
-}</style>'''),
-    html.Div([
-      html.Div([
-        html.H1('Carbon Emissions of Heat Pumps'),
-        html.P('The Simulation Tool for Calculating CO2 Emissions of Heat Pumps is a powerful software application designed to assist in the evaluation and analysis of the environmental impact of heat pump systems. Heat pumps are energy-efficient heating devices widely used in residential settings. This tool aims to provide users with valuable insights into the carbon dioxide (CO2) emissions associated with the operation of heat pumps, helping them make informed decisions to reduce their carbon footprint and contribute to a more sustainable future. For premium users only, this tool provides more detailed insights, overviews, and offers different levels of customization that take your environmental analysis to the next level. '),
-        html.Br(),
-        html.B("Developed at Ferienakademie 2023")
-        #html.Img(src='assets/TitleImage.png', className="u-full-width"),
-      ]),
-      html.Div([
-        html.H1('How it works'),
-        dcc.Graph(figure=fig)
-      ]),
-              
-    html.Div([
-      html.H3('Basic Plan'),
+# Streamlit page layout
+st.title("Heat Pump Simulation")
+st.markdown("""
+The Simulation Tool for Calculating CO2 Emissions of Heat Pumps is a powerful software application designed to assist in the evaluation and analysis of the environmental impact of heat pump systems. Heat pumps are energy-efficient heating devices widely used in residential settings. This tool aims to provide users with valuable insights into the carbon dioxide (CO2) emissions associated with the operation of heat pumps, helping them make informed decisions to reduce their carbon footprint and contribute to a more sustainable future. For premium users only, this tool provides more detailed insights, overviews, and offers different levels of customization that take your environmental analysis to the next level.
 
-      html.Ul([
-        html.Li([html.B("Heat Pump Modeling:"), " Input individual parameters related to building age, size, and heat pump system."]),
-        html.Li([html.B("Energy Consumption Analysis:"), " Breakdown energy consumption associated with heat pump operation. Visualize how much energy their heat pump consumes over one year."]),
-        html.Li([html.B("CO2 Emissions Estimation:"), " By considering the energy consumption data and the selected geographical location, the tool calculates the CO2 emissions produced by the heat pump's operation. It takes into account factors such as electricity source (renewable, fossil fuels), heating demand, and the overall energy efficiency of the heat pump."]),
-        html.Li([html.B("Comparison:"), " Compare emissions of different standard heating systems (oil, gas, and pellets) to a heat pump system."]),
-        html.Li([html.B("Categorization:"), " Results are compared to average values for German households."])
-    ])
-    ]),
+*Developed at Ferienakademie 2023*""")
 
-    html.Div([
-      html.H3('Professional Plan'),
-      html.Ul([
-        html.Li([html.B("Deeper insight")]),
-        html.Li(["More input parameters offer high customizability (window area, target temperature, and more)"]),
-        html.Li(["Plots of every parameter over individual time intervals possible"]),
-        html.Li(["Choose plot styles"]),
-        html.Li([html.B("Advanced settings")]),
-        html.Li(["Model heat losses due to ventilation"]),
-        html.Li(["Set heat gains"]),
-        html.Li(["Set electrical energy mix"]),
-        html.Li(["Set heating control strategy"]),
-        html.Li(["Unlimited selection of >6000 heat pump models"])
-    ])
-    ]),
-              
-    html.A("Free",href="./limited", className="button"),
-    html.A("Premium (Only 49.99 $/month)",href="./academic", className="button button-primary"),
-  ], className="grid-container halves"),
-  html.Div(style={"height":"20em"})
-]
+st.header("How it works")
+st.plotly_chart(fig)
+
+col1, col2 = st.columns(2)
+
+with col1:
+  st.header("Basic Plan")
+  basic_plan_details = [
+      "Heat Pump Modeling: Input individual parameters related to building age, size, and heat pump system.",
+      "Energy Consumption Analysis: Breakdown energy consumption associated with heat pump operation. Visualize how much energy their heat pump consumes over one year.",
+      "CO2 Emissions Estimation: By considering the energy consumption data and the selected geographical location, the tool calculates the CO2 emissions produced by the heat pump's operation. It takes into account factors such as electricity source (renewable, fossil fuels), heating demand, and the overall energy efficiency of the heat pump.",
+      "**Comparison**: Compare emissions of different standard heating systems (oil, gas, and pellets) to a heat pump system.",
+      "Categorization: Results are compared to average values for German households."
+  ]
+
+  for detail in basic_plan_details:
+      st.markdown(f"- {detail}")
+  st.button("Free")
+
+with col2:
+  st.header("Professional Plan")
+  professional_plan_details = [
+      "Deeper insight",
+      "**More input parameters** offer high customizability (window area, target temperature, and more)",
+      "Plots of every parameter over individual time intervals possible",
+      "**Choose plot styles**",
+      "Advanced settings",
+      "Model heat losses due to ventilation",
+      "Set heat gains",
+      "Set electrical energy mix",
+      "Set **heating control strategy**",
+      "Unlimited selection of >6000 heat pump models"
+  ]
+
+  for detail in professional_plan_details:
+      st.markdown(f"- {detail}")
+
+  st.button("Premium (Only 49.99 $/month)")
