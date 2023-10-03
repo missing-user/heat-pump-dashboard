@@ -27,7 +27,8 @@ def generate_summaries(df, selected_hp_power, requested_hp_power, A):
         st.metric(
             "Specific CO2-emissions for heating [g CO2/kWh]",
             millify(specific_co2_emissions),
-            delta= millify(247-specific_co2_emissions),
+            delta= millify(specific_co2_emissions-247),
+            delta_color="inverse",
             help="The german average value is 247 g CO2/kWh."
         )
 
@@ -35,7 +36,8 @@ def generate_summaries(df, selected_hp_power, requested_hp_power, A):
         st.metric(
             "Energy Efficiency [kWh/m2 year]",
             millify(energy_efficiency),
-            delta= millify(170-energy_efficiency),
+            delta= millify(energy_efficiency-170),
+            delta_color="inverse",
             help="The german average value is 170 kWh/m2 year."
         ) 
         st.empty()
