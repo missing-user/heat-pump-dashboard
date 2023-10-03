@@ -41,30 +41,37 @@ def generate_summaries(df, selected_hp_power, requested_hp_power, A):
         st.empty()
     with col2:
         st.metric("Total CO2 emissions (heat pump) [kg CO2eq]", millify(total_emission_hp, 1))
+        st.metric("Seasonal performance factor", millify(spf, 2))
+        
+
+def detailed_summaries(df, selected_hp_power, requested_hp_power, A):
+    total_emission_hp = df["heat pump emissions [kg CO2eq]"].sum()
+    total_emission_gas = df["Gas heating emissions [kg CO2eq]"].sum()
+    total_emission_oil = df["Oil heating emissions [kg CO2eq]"].sum()
+    total_heat = df['Q_dot_demand [kW]'].sum()
+    total_electrical_energy_hp = df['P_el heat pump [kW]'].sum()
+
+    # Display total quantities using st.metric
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        st.metric("Total heat demand  [kWh]", millify(total_heat, 1))
+        st.metric("Total electrical energy (heat pump)  [kWh]", millify(total_electrical_energy_hp, 1))
+    with col2:
+        st.metric("Heat pump power [kW]", millify(selected_hp_power, 1),
+                millify(selected_hp_power - requested_hp_power, 1), help="A green delta means the pump is larger than suggested, a red one smaller than suggested")
         st.metric("Total CO2 emissions of other electrical appliances [kg CO2eq]", millify((df["P_el appliances [kW]"] * df["Intensity [g CO2eq/kWh]"]).sum() * 1e-3, 1))
    
-
-    with st.expander("Detailed Metrics"):
-        # Display total quantities using st.metric
-        col1, col2, col3 = st.columns(3)
-        with col1:
-            st.metric("Total heat demand  [kWh]", millify(total_heat, 1))
-            st.metric("Total electrical energy (heat pump)  [kWh]", millify(total_electrical_energy_hp, 1))
-        with col2:
-            st.metric("Heat pump power [kW]", millify(selected_hp_power, 1),
-                    millify(selected_hp_power - requested_hp_power, 1), help="A green delta means the pump is larger than suggested, a red one smaller than suggested")
-            st.metric("Seasonal performance factor", millify(spf, 2))
-        with col3:
-            
-            # Create a bar chart for annual CO2 emissions
-            barchart = go.Figure(go.Bar(
-                x=["Oil", "Gas", "Pellet", "Heat pump"],
-                y=[total_emission_oil,
-                    total_emission_gas,
-                    df["Pellet heating emissions [kg CO2eq]"].sum(),
-                    total_emission_hp],
-            )).update_layout(
-                title_text="CO2 emissions [kg CO2eq]",
-                yaxis_title="kg CO2eq"
-            )
-            st.plotly_chart(barchart, use_container_width=True)
+    with col3:
+        
+        # Create a bar chart for annual CO2 emissions
+        barchart = go.Figure(go.Bar(
+            x=["Oil", "Gas", "Pellet", "Heat pump"],
+            y=[total_emission_oil,
+                total_emission_gas,
+                df["Pellet heating emissions [kg CO2eq]"].sum(),
+                total_emission_hp],
+        )).update_layout(
+            title_text="CO2 emissions [kg CO2eq]",
+            yaxis_title="kg CO2eq"
+        )
+        st.plotly_chart(barchart, use_container_width=True)

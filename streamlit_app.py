@@ -131,15 +131,9 @@ def customizable_plot(defaults=["T_outside [°C]", "T_house [°C]"], default_sty
     st.plotly_chart(fig, use_container_width=True)
     return fig
 
-customizable_plot()
-#customizable_plot(list(df.filter(regex='[%]').columns), 2)
-customizable_plot(["P_el appliances [kW]", "Q_dot_solar [kW]",
-                   "Q_dot_ventilation [kW]","Q_dot_transferred [kW]", "Q_dot_supplied [kW]"], 1)
-
 # CO2 plot 
 marks = df['heat pump emissions [kg CO2eq]'].rolling(7*24, center=True).mean() > df['Gas heating emissions [kg CO2eq]'].rolling(7*24).mean()
 marks = marks.loc[marks.diff() != 0]
-
 fig3 = px.line(df.replace(0, np.nan), y=['Oil heating emissions [kg CO2eq]',
                         'Gas heating emissions [kg CO2eq]',
                         'heat pump emissions [kg CO2eq]'], 
@@ -148,5 +142,15 @@ fig3 = px.line(df.replace(0, np.nan), y=['Oil heating emissions [kg CO2eq]',
 for i in range(min(len(marks) - 1, 30)): # Excessive number of vrects kills performance, limit to 30
     if marks.iat[i] > 0:
         fig3.add_vrect(x0=marks.index[i], x1=marks.index[i + 1], fillcolor="red", 
-                       opacity=0.25, layer="below", line_width=0)
+                    opacity=0.25, layer="below", line_width=0)
 st.plotly_chart(fig3, use_container_width=True)
+
+
+with st.expander("Detailed Metrics"):
+    summaries.detailed_summaries(df, selected_hp_power, requested_hp_power, living_area)
+    
+    customizable_plot()
+    #customizable_plot(list(df.filter(regex='[%]').columns), 2)
+    customizable_plot(["P_el appliances [kW]", "Q_dot_solar [kW]",
+                    "Q_dot_ventilation [kW]","Q_dot_transferred [kW]", "Q_dot_supplied [kW]"], 1)
+
