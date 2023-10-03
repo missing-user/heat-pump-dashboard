@@ -10,7 +10,7 @@ import heatdemand as hd
 import hplib as hpl
 import re
 import plotly.express as px
-
+from millify import millify 
 
 # Inputs
 st.set_page_config(layout="wide")
@@ -35,7 +35,7 @@ with adv_sidebar:
     hp_lib_df = pd.read_csv(hpl.cwd() + r'/data/hplib_database.csv', delimiter=',')
     hp_lib_df = hp_lib_df.loc[hp_lib_df['Type'] == 'Outdoor Air/Water', :]
     hp_options = hp_lib_df.loc[(hp_lib_df["Rated Power low T [kW]"] > requested_hp_power * 0.8) &
-                                (hp_lib_df["Rated Power low T [kW]"] > requested_hp_power * 1.1), 'Titel'].values
+                                (hp_lib_df["Rated Power low T [kW]"] < requested_hp_power * 1.1), 'Titel'].values
 
     # Function to update date range based on simulation year
     date_range = st.date_input("Date Range for Simulation", [datetime.date(simulation_year, 1, 1), datetime.date(simulation_year, 12, 31)], min_value=datetime.date(2015,1,1))
@@ -45,8 +45,8 @@ with adv_sidebar:
     heatpump_model = st.selectbox("Heat Pump Model", hp_options, index=0)
     model_assumptions = st.multiselect(
         "Model Assumptions",
-        ["Close window blinds in summer", "Ventilation heat losses", "Time-dependent electricity mix", "CO2 aware controller", "10% forecast uncertainty", "Floor heating"],
-        ["Close window blinds in summer", "Ventilation heat losses", "Time-dependent electricity mix", "CO2 aware controller", "10% forecast uncertainty", "Floor heating"],
+        ["Close window blinds in summer", "Ventilation heat losses", "Time-dependent electricity mix", "CO2 aware controller", r"10% forecast uncertainty", "Floor heating"],
+        ["Close window blinds in summer", "Ventilation heat losses", "Time-dependent electricity mix", "CO2 aware controller", r"10% forecast uncertainty", "Floor heating"],
     )
 
 
@@ -97,17 +97,42 @@ df = heatings.gas_heating(df)
 df = heatings.oil_heating(df)
 df = heatings.pellet_heating(df)
 
+# Summary metrics
+# Compute total quantities
+df["heat pump emissions [kg CO2eq]"] = df["P_el heat pump [kW]"] * df["Intensity [g CO2eq/kWh]"] * 1e-3
+total_emission_hp = df["heat pump emissions [kg CO2eq]"].sum()
+total_emission_gas = df["Gas heating emissions [kg CO2eq]"].sum()
+total_emission_oil = df["Oil heating emissions [kg CO2eq]"].sum()
+total_heat = df['Q_dot_demand [kW]'].sum()
+total_electrical_energy_hp = df['P_el heat pump [kW]'].sum()
+selected_hp_power =  hp_lib_df.loc[hp_lib_df["Titel"] == heatpump_model,"Rated Power low T [kW]"].iat[0]
+spf = total_heat / total_electrical_energy_hp
+
+# Display total quantities using st.metric
+
+col1, col2, col3 = st.columns(3)
+with col1:
+    st.metric("Total heat demand  [kWh]", millify(total_heat, 1))
+    st.metric("Total electrical energy (heat pump)  [kWh]", millify(total_electrical_energy_hp, 1))
+with col2:
+    st.metric("Heat pump power [kW]", millify(selected_hp_power, 1),
+              millify(selected_hp_power - requested_hp_power, 1), help="A green delta means the pump is larger than suggested, a red one smaller than suggested")
+    st.metric("Seasonal performance factor", millify(spf, 2))
+with col3:
+    st.metric("Total CO2 emissions (heat pump) [kg CO2eq]", millify(total_emission_hp, 1))
+    st.metric("Total CO2 emissions (oil heating) [kg CO2eq]", millify(total_emission_oil, 1), millify(total_emission_hp-total_emission_oil, 1))
+    st.metric("Total CO2 emissions (gas heating) [kg CO2eq]", millify(total_emission_gas, 1), millify(total_emission_hp-total_emission_gas, 1))
 
 # Plotting
 widget_counter = 0
-def customizable_plot(defaults=["T_outside [°C]", "T_house [°C]"]):
+def customizable_plot(defaults=["T_outside [°C]", "T_house [°C]"], default_style=0):
     global widget_counter
     col1, col2 = st.columns(2)
-    with col2:
+    with col1:
         plot1_quantity = st.multiselect("Plot Quantities", df.columns, defaults, key=widget_counter)
         widget_counter+=1
-    with col1:
-        plot1_style = st.radio("Plot Style", ["line", "bar", "area"], index=0, key=widget_counter)
+    with col2:
+        plot1_style = st.radio("Plot Style", ["line", "bar", "area"], default_style, key=widget_counter)
         widget_counter+=1
 
     if plot1_style == 'line':
@@ -127,7 +152,7 @@ def customizable_plot(defaults=["T_outside [°C]", "T_house [°C]"]):
     return fig
 
 customizable_plot()
-customizable_plot()
+customizable_plot(list(df.filter(regex='[%]').columns), 2)
 
 # CO2 plot 
 marks = df['heat pump emissions [kg CO2eq]'].rolling(7*24, center=True).mean() > df['Gas heating emissions [kg CO2eq]'].rolling(7*24).mean()
