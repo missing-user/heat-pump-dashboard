@@ -161,8 +161,6 @@ def update_dashboard(df_json,
 
     # fetch data
     df = datasource.fetch_all("DE", zip_code, start_date, end_date)
-    if not "Time dependent electricity mix" in assumptions:
-        df["Intensity [g CO2eq/kWh]"] = df["Intensity [g CO2eq/kWh]"].mean()
 
     if electricity_source:
         # no weight specified
@@ -199,7 +197,8 @@ def update_dashboard(df_json,
     else:
         electricity_weight = 0.
     electricity_sources = df.filter(regex='[%]').columns
-
+    if not "Time dependent electricity mix" in assumptions:
+        df["Intensity [g CO2eq/kWh]"] = df["Intensity [g CO2eq/kWh]"].mean()
 
     df:pd.DataFrame = el.load_el_profile(df, family_type)
     df = hd.simulate(df, b_type=building_type, hp_type=model, b_age=building_year,
