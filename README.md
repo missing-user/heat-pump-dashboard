@@ -95,14 +95,21 @@ Finally we compared our results to a real single family house from 1980, for whi
 
 In general we noticed that our model predicted lower heat demand for modern KfW70, KfW40 and GEG20 buildings, compared to the DIN standard. We also observed excessive heating in the summer, due to solar radiation and other internal gains. This is apparently a [known issue with the standard](https://www.haustec.de/heizung/waermeerzeugung/heizlast-nach-din-en-12831-die-luecke-zwischen-regelwerk-und-realitaet), as it completely ignores internal heat sources, even though they are a relevant factor in well isolated buildings.
 
-## Documentation of sources
-Carbon intensity factors:
-Hydro pump storage: according to http://dse.univr.it/home/workingpapers/wp2021n8.pdf effective footprint is 31% above grid average due to round trip losses
-specific heat demand:   http://www.bosy-online.de/heizlastberechnung_nach_din_en_12831.htm
+## Sources
+### Carbon intensity factors
+We follow the methodology described by [electricitymaps.com](https://www.electricitymaps.com/methodology) with most data aggregated from this [2014 IPCC report](https://www.ipcc.ch/site/assets/uploads/2018/02/ipcc_wg3_ar5_annex-iii.pdf#page=7). Hydro pumped storage was adjusted for Germany, as the global estomate is too optimistic.
+According to the [Department of Economics at the University of Verona](http://dse.univr.it/home/workingpapers/wp2021n8.pdf) the effective carbon footprint is 31% above the grid average due to round trip losses. [electricitymaps.com](https://electricitymaps.com) does not account for these additional losses. Additionally the $CO_2$ intensity of German electricity is above the global average, so Germany's mean intensity should be used as the baseline instead.
+
+### specific heat demand
+http://www.bosy-online.de/heizlastberechnung_nach_din_en_12831.htm
                         https://www.waermepumpe.de/normen-technik/heizlastrechner/
                         https://www.npro.energy/main/de/load-profiles/heat-load-and-demand
-Heating limit temperature: https://www.effizienzhaus-online.de/lexikon/heizgrenztemperatur/
+### Heating limit temperature
+https://www.effizienzhaus-online.de/lexikon/heizgrenztemperatur/
 
+Reference values for a 1980 house
+200m^2
+3000l oil consumption -> 30000kWh
 
 3000 L Heizoel
 30000 kWh Waermebedarf pro Jahr
@@ -110,7 +117,8 @@ Heating limit temperature: https://www.effizienzhaus-online.de/lexikon/heizgrenz
 Berater: 55000 kWh Waermebedarf
 
 
-Electricity stats for Germany: https://www.smard.de/en/downloadcenter/download-market-data/?downloadAttributes=%7B%22selectedCategory%22:1,%22selectedSubCategory%22:1,%22selectedRegion%22:false,%22selectedFileType%22:%22CSV%22,%22from%22:1514761200000,%22to%22:1672613999999%7D
+### Electricity stats for Germany
+https://www.smard.de/en/downloadcenter/download-market-data/?downloadAttributes=%7B%22selectedCategory%22:1,%22selectedSubCategory%22:1,%22selectedRegion%22:false,%22selectedFileType%22:%22CSV%22,%22from%22:1514761200000,%22to%22:1672613999999%7D
 
 
 - Wohnflaeche zu Wand+Dachflaeche ist etwa Faktor 3 (Faustregel und Bestaetigt anhand von Ullis Haus Werten)
