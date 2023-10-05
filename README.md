@@ -97,9 +97,9 @@ In general we noticed that our model predicted lower heat demand for modern KfW7
 
 
 ## Outlook and Conclusion
-Take into account more factors, e.g. domestic hot water would play an important role.
+Take into account more factors, e.g. To further enhance our analysis, it is crucial to consider additional factors, such as the influence of domestic hot water consumption, which is likely to have a significant role in the overall system dynamics.
 
-Comparing the economic impacts in addition to the $CO_2$ impact would be interesting as well, algorithmically no changes, we would only need to exchange the data sources. We briefly played around with explicitly modelling a hot water storage tank in the house, but in our simplified model, this did barely made an impact. 
+In addition, exploring the economic implications alongside environmental impacts presents an intriguing avenue. This can be achieved with minimal algorithmic adjustments, primarily involving the substitution of data sources. Although we briefly experimented with modeling a hot water storage tank within the household, it only resulted in minimal impact on the outcome. In reality, hot water storage tanks are essential for any heat pump installation, as they service the short bursts of domestic hot water demands, for which the heat pump would react too slowly.
 
 Time dependent electricity mix played a smaller role than expected. Especially when using the $CO_2$ aware control strategy, the difference is very small. With an increasing Vorlauf Temperature, the impact becomes more noticable, doing the simulation with the average intensity would underestimate the $CO_2$ impact of heat pumps by up to $10\%$.
 
