@@ -101,7 +101,7 @@ Take into account more factors, e.g. To further enhance our analysis, it is cruc
 
 In addition, exploring the economic implications alongside environmental impacts presents an intriguing avenue. This can be achieved with minimal algorithmic adjustments, primarily involving the substitution of data sources. Although we briefly experimented with modeling a hot water storage tank within the household, it only resulted in minimal impact on the outcome. In reality, hot water storage tanks are essential for any heat pump installation, as they service the short bursts of domestic hot water demands, for which the heat pump would react too slowly.
 
-Time dependent electricity mix played a smaller role than expected. Especially when using the $CO_2$ aware control strategy, the difference is very small. With an increasing Vorlauf Temperature, the impact becomes more noticable, doing the simulation with the average intensity would underestimate the $CO_2$ impact of heat pumps by up to $10\%$.
+Time dependent electricity mix played a smaller role than expected. Especially when using the $CO_2$ aware control strategy, the difference is very small. With an increasing flow temperature (disabled floor heating model assumption), the impact becomes more noticable. In those cases, doing the simulation with the average intensity would underestimate the $CO_2$ impact of heat pumps by up to $10\%$.
 
 ## Appendix 
 
