@@ -56,8 +56,6 @@ with adv_sidebar:
 df = datasource.fetch_all("DE", zip_code, 
             datetime.datetime.fromisoformat(date_range[0].isoformat()), 
             datetime.datetime.fromisoformat(date_range[1].isoformat()))
-if not "Time-dependent electricity mix" in model_assumptions:
-    df["Intensity [g CO2eq/kWh]"] = df["Intensity [g CO2eq/kWh]"].mean()
 
 # Electricity modification
 with adv_sidebar:
@@ -87,6 +85,9 @@ for energy_type in df_copy.columns:
             energy_type.replace("[%]","[MWh] Calculated resolutions"), "Med"]
 for col in df_copy.columns:
     df[col] = df_copy[col]
+
+if not "Time-dependent electricity mix" in model_assumptions:
+    df["Intensity [g CO2eq/kWh]"] = df["Intensity [g CO2eq/kWh]"].mean()
 
 # Simulation of heat pumps
 df = el.load_el_profile(df, el.name_to_file[residents])

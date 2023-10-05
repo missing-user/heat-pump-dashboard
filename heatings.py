@@ -110,10 +110,8 @@ def simulate_hp(df,model,system, age):
     if system == "Floor heating":
         # pick floor heating vorlauf temperatures
         t_vorlauf = t_vorlauf_floor
-        print('floor heating active, vorlauf T:\n', t_vorlauf)
     else:
         t_vorlauf = t_vorlauf_conventional[t_vorlauf_conventional['building_year']==age]
-        print('conventional heating active, vorlauf T:\n', t_vorlauf)
 
 
     vorlauf_interpfunc = interp1d(t_vorlauf['t_amb [°C]'], t_vorlauf['t_vl [°C]'], kind='linear')

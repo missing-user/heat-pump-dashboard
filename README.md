@@ -127,3 +127,6 @@ https://www.smard.de/en/downloadcenter/download-market-data/?downloadAttributes=
 
 - Wohnflaeche zu Wand+Dachflaeche ist etwa Faktor 3 (Faustregel und Bestaetigt anhand von Ullis Haus Werten)
 - Wir verwenden den Wert von Ullis Haus runtergerechnet auf die Wohnflaeche. Faktoren fur spezifische Wearmekapazitaet (from 140 to 315 kJ m-2 K-1) aus https://www.sciencedirect.com/science/article/pii/S2214509522005551
+
+### Lastprofile Trinkwarmwasser
+https://www.npro.energy/main/de/load-profiles/residential/load-profile-residential-domestic-hot-water

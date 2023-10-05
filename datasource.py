@@ -34,7 +34,7 @@ def load_TRY(selection:str):
     return trydf
   return None
 
-def fetch_all(country_code, zip_code, start, end, TRY_dataset=None):
+def fetch_all(country_code, zip_code, start, end, TRY_dataset=None)->pd.DataFrame:
   if start and end and zip_code:
     if isinstance(start, str):
       start = datetime.fromisoformat(start)
