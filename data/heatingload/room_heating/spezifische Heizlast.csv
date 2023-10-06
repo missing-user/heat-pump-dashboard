@@ -1,6 +1,6 @@
 ﻿building_type;before 1948;1949-1968;1969-1978;1979-1983 (1. WSchV);1984-1994 (2. WSchV);1995-2010;after 2010;KfW 70;KfW 55;KfW 40;GEG 20
-single_family_house [W/m2];180;170;150;95;75;60;38;34;23;23;23
-terraced_house (end) [W/m2];160;150;130;90;70;55;;;;;
-tarreced_house [W/m2];140;130;120;85;65;50;;;;;
-appartment_building  < 8 AP [W/m2];130;120;110;65;60;45;42;33;25;;
-appartment_building > 8 AP [W/m2];120;110;100;60;55;40;;;;;
+single_family_house;180;170;150;95;75;60;38;34;23;23;23
+terraced_house (end);160;150;130;90;70;55;;;;;
+tarreced_house;140;130;120;85;65;50;;;;;
+appartment_building < 8 AP;130;120;110;65;60;45;42;33;25;;
+appartment_building > 8 AP;120;110;100;60;55;40;;;;;

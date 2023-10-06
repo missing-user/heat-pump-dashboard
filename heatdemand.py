@@ -129,10 +129,24 @@ def ventilation(b_type, volume):
     return 0.5 * volume * c_air / 3600.0  # kJ/sK
 
 
-def calc_U(b_age, A_windows, A, n_floors, h_floor=3):
+def calc_U(b_type, b_age, A_windows, A, n_floors, h_floor=3.0):
     A_basement = A / n_floors
     A_roof = A / n_floors
     A_outsidewall = np.sqrt(A / n_floors) * h_floor * n_floors * 4
+
+    if b_type == "tarreced_house":
+        A_outsidewall *= 0.5
+    elif b_type == "terraced_house (end)":
+        A_outsidewall *= 0.75 # 3 walls exposed, 1 wall shared 
+    elif b_type == "appartment_building < 8 AP" or b_type == "appartment_building > 8 AP":
+        A_outsidewall *= 0.5 # 2 walls exposed, 2 walls shared
+        if b_type == "appartment_building < 8 AP":
+            A_roof *= 0.5
+            A_basement *= 0.5
+        else:
+            A_roof *= 0.2
+            A_basement *= 0.2
+    A_outsidewall = max(A_outsidewall, A_windows) # We cannot have more windows than wall surface
 
     if (b_age == "KfW 70" or b_age == "KfW 40"):
         UA = (A_outsidewall + A_basement + A_roof) * uwerte.loc[b_age, "overall [kW/m2K]"]  # W/K
@@ -147,7 +161,7 @@ def calc_U(b_age, A_windows, A, n_floors, h_floor=3):
 
 
 def simulate(df, hp_type, b_type, b_age, A, A_windows, n_floors=2, t_target=20.0, t_range=1., assumptions=[]):
-    UA = calc_U(b_age, A_windows, A, n_floors)
+    UA = calc_U(b_type, b_age, A_windows, A, n_floors)
     specific_heat_capa = cwerte.loc[b_age, "Heatcapacity [kJ/m3K]"]
 
     volume = A * 3.0  # m3
