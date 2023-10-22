@@ -29,7 +29,7 @@ floor_count = st.sidebar.number_input("Floor Count", min_value=1, value=2)
 st.sidebar.divider()
 heating_power_override = None
 if st.sidebar.checkbox("Override Heating Power"):
-    heating_power_override = st.sidebar.number_input("Heating power [kWh] (override)", help="Override the calculated heating power based on known power consumption from previous years. For gas and oil heating, multiply with the conversion factor 10 kWh/m³.")
+    heating_power_override = st.sidebar.number_input("Heating power [kWh] (override)", min_value=1, help="Override the calculated heating power based on known power consumption from previous years. For gas and oil heating, multiply with the conversion factor 10 kWh/m³.")
 
 requested_hp_power = hd.heat_pump_size(b_type=building_type, b_age=building_year, A=living_area)
 
@@ -103,12 +103,15 @@ df = hd.simulate(df, b_type=building_type, hp_type=heatpump_model, b_age=buildin
 if heating_power_override is not None:
     estimated_power = df["Q_dot_supplied [kW]"].sum()
     multiplier = heating_power_override / estimated_power
+    print(f"Estimated heating power: {estimated_power} kWh", multiplier)
 
-    colums_to_modify = df.filter(regex=r'.*\[kWh\]').columns
-    colums_to_modify.append(df.filter(regex=r'.*\[kW\]').columns)
-    colums_to_modify.append(df.filter(regex=r'.*\[kg CO2eq\]').columns)
-    colums_to_modify.append(df.filter(regex=r'.*\[kJ\]').columns)
+    colums_to_modify = list(df.filter(regex=r'\[kWh\]').columns)
+    colums_to_modify.extend(list(df.filter(regex=r'\[kW\]').columns))
+    colums_to_modify.extend(list(df.filter(regex=r'\[kg CO2eq\]').columns))
+    colums_to_modify.extend(list(df.filter(regex=r'\[kJ\]').columns))
     df[colums_to_modify] = df[colums_to_modify] * multiplier
+
+    print(colums_to_modify)
 
 df = heatings.gas_heating(df)
 df = heatings.oil_heating(df)
