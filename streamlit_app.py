@@ -26,10 +26,14 @@ residents = st.sidebar.selectbox("Residents", el.name_to_file.keys(), index=0)
 living_area = st.sidebar.number_input("Living Area", min_value=1, value=120)
 floor_count = st.sidebar.number_input("Floor Count", min_value=1, value=2)
 
-# Advanced Settings
+st.sidebar.divider()
+heating_power_override = None
+if st.sidebar.checkbox("Override Heating Power"):
+    heating_power_override = st.sidebar.number_input("Heating power [kWh] (override)", help="Override the calculated heating power based on known power consumption from previous years. For gas and oil heating, multiply with the conversion factor 10 kWh/m³.")
 
 requested_hp_power = hd.heat_pump_size(b_type=building_type, b_age=building_year, A=living_area)
 
+# Advanced Settings
 adv_sidebar = st.sidebar.expander("Advanced Settings")
 with adv_sidebar:
     # Fetch data
@@ -54,8 +58,8 @@ with adv_sidebar:
 
 # Data processing
 df = datasource.fetch_all("DE", zip_code, 
-            datetime.datetime.fromisoformat(date_range[0].isoformat()), 
-            datetime.datetime.fromisoformat(date_range[1].isoformat()))
+     datetime.datetime.fromisoformat(date_range[0].isoformat()), 
+     datetime.datetime.fromisoformat(date_range[1].isoformat()))
 
 # Electricity modification
 with adv_sidebar:
@@ -95,6 +99,17 @@ df = hd.simulate(df, b_type=building_type, hp_type=heatpump_model, b_age=buildin
                     A_windows=window_area, A=living_area, n_floors=floor_count,
                     t_target=target_temp, t_range=comfort_temp_range,
                     assumptions=model_assumptions)
+
+if heating_power_override is not None:
+    estimated_power = df["Q_dot_supplied [kW]"].sum()
+    multiplier = heating_power_override / estimated_power
+
+    colums_to_modify = df.filter(regex=r'.*\[kWh\]').columns
+    colums_to_modify.append(df.filter(regex=r'.*\[kW\]').columns)
+    colums_to_modify.append(df.filter(regex=r'.*\[kg CO2eq\]').columns)
+    colums_to_modify.append(df.filter(regex=r'.*\[kJ\]').columns)
+    df[colums_to_modify] = df[colums_to_modify] * multiplier
+
 df = heatings.gas_heating(df)
 df = heatings.oil_heating(df)
 df = heatings.pellet_heating(df)
@@ -152,5 +167,6 @@ with st.expander("Detailed Metrics"):
     customizable_plot()
     #customizable_plot(list(df.filter(regex='[%]').columns), 2)
     customizable_plot(["P_el appliances [kW]", "Q_dot_solar [kW]",
-                    "Q_dot_ventilation [kW]","Q_dot_transferred [kW]", "Q_dot_supplied [kW]"], 1)
+                    "Q_dot_ventilation [kW]","Q_dot_transferred [kW]", 
+                    "Q_dot_supplied [kW]"], 1)
 
