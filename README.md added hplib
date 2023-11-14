@@ -134,3 +134,8 @@ https://www.effizienzhaus-online.de/lexikon/heizgrenztemperatur/
 |Air volume: |1251  $m^3$
 |Historic heating oil consumption: |3000 $l$
 |Historic heating power consumption: |30000  $kWh$
+
+### Heat pump library 
+For accurate heat pump models we are using [hplib](https://github.com/FZJ-IEK3-VSA/hplib)
+
+Citation: Tjarko Tjaden, Hauke Hoops, Kai Rösken. (2021). RE-Lab-Projects/hplib: heat pump library (v2.0). Zenodo. https://doi.org/10.5281/zenodo.5521597
