@@ -35,7 +35,3 @@ jobs:
           black_auto_fix: true
           flake8: true
           flake8_auto_fix: false
-   
-      - name: Python Lockfile Update
-        uses: tedivm/action-python-lockfile-update@v2.0.0
-            
